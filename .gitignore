@@ -1,0 +1,17 @@
+# Compiled binaries
+agent
+controller
+
+# Object files
+*.o
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+# Runtime uploaded files
+agentfiles/IT24610823/*
+
+# Keep directory structure
+!agentfiles/IT24610823/.gitkeep
