@@ -17,13 +17,15 @@
 
 
 /*
- * Sends the complete buffer through the TCP socket.
+ * Send all bytes in the supplied buffer.
  *
  * A single send() call is not guaranteed to transmit
- * all bytes, so this function continues until the
- * complete message has been sent.
+ * the entire message, so continue until all bytes
+ * have been sent or an error occurs.
  */
-ssize_t send_all(int socket_fd, const void *buffer, size_t length)
+ssize_t send_all(int socket_fd,
+                 const void *buffer,
+                 size_t length)
 {
     size_t total_sent = 0;
     const char *data = (const char *)buffer;
@@ -38,10 +40,6 @@ ssize_t send_all(int socket_fd, const void *buffer, size_t length)
 
         if (sent < 0)
         {
-            /*
-             * If send() was interrupted by a signal,
-             * try again.
-             */
             if (errno == EINTR)
             {
                 continue;
@@ -63,12 +61,14 @@ ssize_t send_all(int socket_fd, const void *buffer, size_t length)
 
 
 /*
- * Receives one newline-terminated protocol message.
+ * Receive one newline-terminated protocol message.
  *
- * The '\n' character is removed before the message
- * is returned to the caller.
+ * The newline character is removed before the
+ * message is returned to the caller.
  */
-ssize_t recv_line(int socket_fd, char *buffer, size_t buffer_size)
+ssize_t recv_line(int socket_fd,
+                  char *buffer,
+                  size_t buffer_size)
 {
     size_t position = 0;
 
@@ -89,9 +89,6 @@ ssize_t recv_line(int socket_fd, char *buffer, size_t buffer_size)
 
         if (received < 0)
         {
-            /*
-             * Retry recv() if interrupted by a signal.
-             */
             if (errno == EINTR)
             {
                 continue;
@@ -101,8 +98,8 @@ ssize_t recv_line(int socket_fd, char *buffer, size_t buffer_size)
         }
 
         /*
-         * recv() returning 0 means that the Agent
-         * closed the TCP connection.
+         * recv() returning zero means that the
+         * Agent has closed the TCP connection.
          */
         if (received == 0)
         {
@@ -115,15 +112,15 @@ ssize_t recv_line(int socket_fd, char *buffer, size_t buffer_size)
         }
 
         /*
-         * A newline marks the end of one
-         * RemoteOps protocol message.
+         * Newline marks the end of one RemoteOps
+         * protocol message.
          */
         if (character == '\n')
         {
             buffer[position] = '\0';
 
             /*
-             * Also support CRLF (\r\n).
+             * Also support CRLF line endings.
              */
             if (position > 0 &&
                 buffer[position - 1] == '\r')
@@ -153,10 +150,14 @@ int main(void)
     char buffer[BUFFER_SIZE];
 
     /*
-     * Create an IPv4 TCP socket.
+     * ------------------------------------------------
+     * CREATE CONTROLLER TCP SOCKET
+     * ------------------------------------------------
      */
     sock_fd =
-        socket(AF_INET, SOCK_STREAM, 0);
+        socket(AF_INET,
+               SOCK_STREAM,
+               0);
 
     if (sock_fd < 0)
     {
@@ -164,20 +165,25 @@ int main(void)
         return EXIT_FAILURE;
     }
 
+
     /*
-     * Prepare the Agent address structure.
+     * ------------------------------------------------
+     * CONFIGURE AGENT ADDRESS
+     * ------------------------------------------------
      */
-    memset(&agent_addr, 0, sizeof(agent_addr));
+    memset(&agent_addr,
+           0,
+           sizeof(agent_addr));
 
-    agent_addr.sin_family = AF_INET;
-    agent_addr.sin_port = htons(AGENT_PORT);
+    agent_addr.sin_family =
+        AF_INET;
+
+    agent_addr.sin_port =
+        htons(AGENT_PORT);
 
     /*
-     * During local development, both the Agent and
-     * Controller run on the same machine.
-     *
-     * Therefore, the loopback address 127.0.0.1
-     * is used.
+     * During local development, both programs
+     * execute on the same Linux machine.
      */
     if (inet_pton(AF_INET,
                   "127.0.0.1",
@@ -190,20 +196,26 @@ int main(void)
         return EXIT_FAILURE;
     }
 
+
     printf("========================================\n");
     printf("        RemoteOps Controller\n");
     printf("========================================\n");
     printf("Registration Number : IT24610823\n");
     printf("Agent Address       : 127.0.0.1\n");
-    printf("Agent Port          : %d\n", AGENT_PORT);
-    printf("Session ID          : %s\n", SID);
+    printf("Agent Port          : %d\n",
+           AGENT_PORT);
+    printf("Session ID          : %s\n",
+           SID);
     printf("----------------------------------------\n");
 
     printf("Connecting to Agent at 127.0.0.1:%d...\n",
            AGENT_PORT);
 
+
     /*
-     * Establish the TCP connection with the Agent.
+     * ------------------------------------------------
+     * CONNECT TO AGENT
+     * ------------------------------------------------
      */
     if (connect(sock_fd,
                 (struct sockaddr *)&agent_addr,
@@ -218,16 +230,18 @@ int main(void)
     printf("Connected to RemoteOps Agent.\n");
     printf("----------------------------------------\n");
 
+
     /*
-     * AUTH must be the first RemoteOps protocol
-     * command sent after establishing a connection.
+     * ------------------------------------------------
+     * AUTHENTICATION
+     * ------------------------------------------------
+     *
+     * AUTH must be the first protocol command sent
+     * after the TCP connection is established.
      */
     const char *auth_command =
         "AUTH OPS-0823\n";
 
-    /*
-     * Send the authentication command.
-     */
     if (send_all(sock_fd,
                  auth_command,
                  strlen(auth_command)) < 0)
@@ -238,10 +252,12 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    printf("Sent: AUTH %s\n", AUTH_TOKEN);
+    printf("Sent: AUTH %s\n",
+           AUTH_TOKEN);
+
 
     /*
-     * Wait for the Agent authentication response.
+     * Receive the authentication response.
      */
     ssize_t result =
         recv_line(sock_fd,
@@ -264,11 +280,13 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    printf("Agent: %s\n", buffer);
+    printf("Agent: %s\n",
+           buffer);
+
 
     /*
-     * Verify the expected successful
-     * authentication response.
+     * Authentication must succeed before entering
+     * the interactive RemoteOps command loop.
      */
     if (strcmp(buffer,
                "OK AUTHENTICATED SID:3280") == 0)
@@ -286,13 +304,137 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    /*
-     * Additional interactive RemoteOps commands
-     * such as SYSINFO, LISTPROC, EXEC, PUT, GET,
-     * MONITOR and QUIT will be added in the
-     * following development stages.
-     */
 
+    /*
+     * ------------------------------------------------
+     * INTERACTIVE REMOTEOPS SESSION
+     * ------------------------------------------------
+     */
+    printf("----------------------------------------\n");
+    printf("Available Commands:\n");
+    printf("  SYSINFO\n");
+    printf("  QUIT\n");
+    printf("----------------------------------------\n");
+
+
+    /*
+     * Keep the same TCP connection open so that
+     * multiple commands can be issued after one
+     * successful authentication.
+     */
+    while (1)
+    {
+        char command[BUFFER_SIZE];
+        char protocol_message[BUFFER_SIZE];
+
+        printf("RemoteOps> ");
+        fflush(stdout);
+
+
+        /*
+         * Read one command from the user.
+         */
+        if (fgets(command,
+                  sizeof(command),
+                  stdin) == NULL)
+        {
+            printf("\nInput closed.\n");
+            break;
+        }
+
+
+        /*
+         * Remove the newline inserted by fgets().
+         */
+        command[strcspn(command, "\n")] = '\0';
+
+
+        /*
+         * Ignore an empty command.
+         */
+        if (strlen(command) == 0)
+        {
+            continue;
+        }
+
+
+        /*
+         * Convert the user's command into a
+         * newline-terminated protocol message.
+         */
+        int written =
+            snprintf(protocol_message,
+                     sizeof(protocol_message),
+                     "%s\n",
+                     command);
+
+        if (written < 0 ||
+            (size_t)written >= sizeof(protocol_message))
+        {
+            fprintf(stderr,
+                    "Command is too long.\n");
+
+            continue;
+        }
+
+
+        /*
+         * Send the command to the Agent.
+         */
+        if (send_all(sock_fd,
+                     protocol_message,
+                     strlen(protocol_message)) < 0)
+        {
+            perror("send");
+            break;
+        }
+
+
+        /*
+         * Wait for the Agent response.
+         */
+        ssize_t response_length =
+            recv_line(sock_fd,
+                      buffer,
+                      sizeof(buffer));
+
+        if (response_length < 0)
+        {
+            perror("recv");
+            break;
+        }
+
+        if (response_length == 0)
+        {
+            printf("Agent disconnected.\n");
+            break;
+        }
+
+
+        /*
+         * Display the response returned by the Agent.
+         */
+        printf("Agent: %s\n",
+               buffer);
+
+
+        /*
+         * QUIT causes the Agent to return
+         * OK BYE SID:3280 and close this session.
+         */
+        if (strcmp(command,
+                   "QUIT") == 0)
+        {
+            break;
+        }
+    }
+
+
+    /*
+     * ------------------------------------------------
+     * CLEANUP
+     * ------------------------------------------------
+     */
     close(sock_fd);
 
     printf("----------------------------------------\n");

@@ -48,3 +48,14 @@ Each Controller session now begins in an unauthenticated state. The Agent valida
 A persistent command-processing loop was introduced inside each Controller worker thread so the connection can remain active after authentication and process additional RemoteOps commands in later implementation stages.
 
 Helper functions were also introduced for reliable protocol communication. recv_line() reads newline-terminated protocol messages, while send_all() ensures that an entire response buffer is transmitted even if a single send() call does not send every byte.
+
+
+## 04 October 2026 – SYSINFO and Persistent Controller Session
+
+The RemoteOps Agent was extended with the SYSINFO command. System statistics are obtained directly from the Linux /proc virtual filesystem. The one-minute system load is read from /proc/loadavg, memory usage is calculated using MemTotal and MemAvailable from /proc/meminfo, and uptime is obtained from /proc/uptime.
+
+The Controller was also changed from an authentication-only test program into a persistent interactive session. After successful authentication, the user can enter RemoteOps commands without reconnecting for each operation.
+
+QUIT was implemented to provide graceful session termination. The Agent returns OK BYE SID:3280 before closing the corresponding Controller connection.
+
+SYSINFO was tested multiple times within the same authenticated TCP session and its values were compared with the underlying Linux /proc information.
