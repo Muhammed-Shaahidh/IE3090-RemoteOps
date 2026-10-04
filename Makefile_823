@@ -1,5 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -Wpedantic -std=c11
+THREAD_FLAGS = -pthread
 
 AGENT = agent
 CONTROLLER = controller
@@ -10,7 +11,7 @@ CONTROLLER_SRC = controller_823.c
 all: $(AGENT) $(CONTROLLER)
 
 $(AGENT): $(AGENT_SRC)
-	$(CC) $(CFLAGS) $(AGENT_SRC) -o $(AGENT)
+	$(CC) $(CFLAGS) $(THREAD_FLAGS) $(AGENT_SRC) -o $(AGENT)
 
 $(CONTROLLER): $(CONTROLLER_SRC)
 	$(CC) $(CFLAGS) $(CONTROLLER_SRC) -o $(CONTROLLER)
@@ -19,4 +20,3 @@ clean:
 	rm -f $(AGENT) $(CONTROLLER) *.o
 
 .PHONY: all clean
-

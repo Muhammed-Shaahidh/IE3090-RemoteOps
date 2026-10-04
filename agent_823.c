@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -10,20 +11,103 @@
 
 #define AGENT_PORT 9461
 #define BUFFER_SIZE 1024
+#define SID "SID:3280"
+
+/*
+ * Information passed from the main Agent thread
+ * to an individual Controller worker thread.
+ */
+typedef struct
+{
+    int client_fd;
+    struct sockaddr_in client_addr;
+} client_info_t;
+
+
+/*
+ * Worker thread used to handle one connected Controller.
+ *
+ * The complete RemoteOps command-processing loop will be
+ * added in later development stages.
+ */
+void *handle_controller(void *arg)
+{
+    client_info_t *client_info = (client_info_t *)arg;
+
+    int client_fd = client_info->client_fd;
+    struct sockaddr_in client_addr = client_info->client_addr;
+
+    /*
+     * The structure was dynamically allocated by the main
+     * thread. The worker now owns the copied information,
+     * so the original allocation can be released.
+     */
+    free(client_info);
+
+    printf("[THREAD %lu] Controller connected from %s:%d\n",
+           (unsigned long)pthread_self(),
+           inet_ntoa(client_addr.sin_addr),
+           ntohs(client_addr.sin_port));
+
+    char buffer[BUFFER_SIZE];
+
+    memset(buffer, 0, sizeof(buffer));
+
+    ssize_t bytes_received =
+        recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+
+    if (bytes_received < 0)
+    {
+        perror("recv");
+    }
+    else if (bytes_received == 0)
+    {
+        printf("[THREAD %lu] Controller disconnected without sending data.\n",
+               (unsigned long)pthread_self());
+    }
+    else
+    {
+        buffer[bytes_received] = '\0';
+
+        printf("[THREAD %lu] Received: %s",
+               (unsigned long)pthread_self(),
+               buffer);
+
+        const char *response =
+            "OK BASIC_CONNECTION SID:3280\n";
+
+        if (send(client_fd,
+                 response,
+                 strlen(response),
+                 0) < 0)
+        {
+            perror("send");
+        }
+        else
+        {
+            printf("[THREAD %lu] Response sent successfully.\n",
+                   (unsigned long)pthread_self());
+        }
+    }
+
+    close(client_fd);
+
+    printf("[THREAD %lu] Controller session closed.\n",
+           (unsigned long)pthread_self());
+
+    return NULL;
+}
+
 
 int main(void)
 {
     int server_fd;
-    int client_fd;
 
     struct sockaddr_in server_addr;
-    struct sockaddr_in client_addr;
 
-    socklen_t client_addr_len = sizeof(client_addr);
-
-    char buffer[BUFFER_SIZE];
-
-    /* Create the TCP socket. */
+    /*
+     * Create the Agent TCP listening socket.
+     */
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
 
     if (server_fd < 0)
@@ -32,10 +116,6 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    /*
-     * Allow the listening address to be reused after restarting
-     * the Agent during development.
-     */
     int reuse = 1;
 
     if (setsockopt(server_fd,
@@ -55,7 +135,9 @@ int main(void)
     server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     server_addr.sin_port = htons(AGENT_PORT);
 
-    /* Bind the socket to the personalised Agent port. */
+    /*
+     * Bind the Agent to the personalised TCP port.
+     */
     if (bind(server_fd,
              (struct sockaddr *)&server_addr,
              sizeof(server_addr)) < 0)
@@ -65,8 +147,11 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    /* Start listening for incoming Controller connections. */
-    if (listen(server_fd, 5) < 0)
+    /*
+     * Use a backlog larger than the assignment's minimum
+     * five simultaneous Controller requirement.
+     */
+    if (listen(server_fd, 10) < 0)
     {
         perror("listen");
         close(server_fd);
@@ -74,72 +159,72 @@ int main(void)
     }
 
     printf("========================================\n");
-    printf("       RemoteOps Agent - Basic TCP\n");
+    printf("      RemoteOps Agent - Concurrent\n");
     printf("========================================\n");
     printf("Registration Number : IT24610823\n");
     printf("Listening Port      : %d\n", AGENT_PORT);
-    printf("Session ID          : SID:3280\n");
+    printf("Session ID          : %s\n", SID);
+    printf("Concurrency Model   : POSIX threads\n");
     printf("----------------------------------------\n");
-    printf("Waiting for a Controller connection...\n");
+    printf("Waiting for Controller connections...\n\n");
 
     /*
-     * Accept one Controller for this initial development stage.
-     * Multi-client concurrency will be added in the next stage.
+     * Continue accepting Controllers instead of terminating
+     * after the first connection.
      */
-    client_fd = accept(server_fd,
-                       (struct sockaddr *)&client_addr,
-                       &client_addr_len);
-
-    if (client_fd < 0)
+    while (1)
     {
-        perror("accept");
-        close(server_fd);
-        return EXIT_FAILURE;
-    }
+        client_info_t *client_info =
+            malloc(sizeof(client_info_t));
 
-    printf("\nController connected from %s:%d\n",
-           inet_ntoa(client_addr.sin_addr),
-           ntohs(client_addr.sin_port));
-
-    memset(buffer, 0, sizeof(buffer));
-
-    ssize_t bytes_received =
-        recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-
-    if (bytes_received < 0)
-    {
-        perror("recv");
-    }
-    else if (bytes_received == 0)
-    {
-        printf("Controller disconnected before sending data.\n");
-    }
-    else
-    {
-        buffer[bytes_received] = '\0';
-
-        printf("Received from Controller: %s\n", buffer);
-
-        const char *response =
-            "OK BASIC_CONNECTION SID:3280\n";
-
-        if (send(client_fd,
-                 response,
-                 strlen(response),
-                 0) < 0)
+        if (client_info == NULL)
         {
-            perror("send");
+            perror("malloc");
+            continue;
         }
-        else
+
+        socklen_t client_addr_len =
+            sizeof(client_info->client_addr);
+
+        client_info->client_fd =
+            accept(server_fd,
+                   (struct sockaddr *)&client_info->client_addr,
+                   &client_addr_len);
+
+        if (client_info->client_fd < 0)
         {
-            printf("Basic TCP response sent successfully.\n");
+            perror("accept");
+            free(client_info);
+            continue;
         }
+
+        pthread_t thread_id;
+
+        int result =
+            pthread_create(&thread_id,
+                           NULL,
+                           handle_controller,
+                           client_info);
+
+        if (result != 0)
+        {
+            fprintf(stderr,
+                    "pthread_create failed: %s\n",
+                    strerror(result));
+
+            close(client_info->client_fd);
+            free(client_info);
+            continue;
+        }
+
+        /*
+         * The main Agent does not need to pthread_join()
+         * completed Controller threads.
+         */
+        pthread_detach(thread_id);
     }
 
-    close(client_fd);
     close(server_fd);
-
-    printf("Basic TCP test completed.\n");
 
     return EXIT_SUCCESS;
 }

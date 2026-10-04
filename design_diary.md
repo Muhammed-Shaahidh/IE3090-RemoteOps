@@ -27,3 +27,13 @@ SO_REUSEADDR was enabled on the Agent socket to make repeated development and te
 
 At this stage, the Agent handles only one Controller connection. Concurrent client handling using POSIX threads will be implemented in a later stage.
 
+
+## 04 October 2026 – Multi-Client Concurrency
+
+The Agent was extended from a single-connection implementation to a concurrent server using POSIX threads.
+
+The main Agent thread now continuously accepts incoming Controller connections. Each accepted connection is assigned to an independent worker thread using pthread_create(). This allows the Agent to continue accepting new connections while existing Controller sessions are being processed.
+
+A separate dynamically allocated client_info_t structure is used for each Controller to prevent connection information from being overwritten between threads. Worker threads are detached using pthread_detach() so their resources can be reclaimed automatically when they terminate.
+
+The concurrency mechanism was tested by launching multiple Controller processes against the Agent. The Agent successfully created worker threads and continued accepting additional connections.

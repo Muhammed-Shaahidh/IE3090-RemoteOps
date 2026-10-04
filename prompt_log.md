@@ -61,3 +61,24 @@ The suggested implementation was reviewed and used to build the initial TCP comm
 
 **What I Learned:**
 I learned the roles of socket(), bind(), listen(), accept(), connect(), send() and recv() in a TCP client/server application. I also learned that the Agent uses the personalised port 9461 and that htons() converts the port value to network byte order.
+
+
+## Interaction 04
+
+**Date:** 04 October 2026
+
+**AI Tool:** ChatGPT
+
+**Stage:** Multi-client concurrency implementation
+
+**Prompt Summary:**
+Requested the next development stage after successfully completing and committing the basic TCP Agent and Controller communication.
+
+**AI Assistance Received:**
+ChatGPT provided guidance for extending the Agent to handle multiple Controller connections using POSIX threads. The guidance included pthread_create(), pthread_detach(), per-client connection structures, dynamic memory allocation, compilation with -pthread, and concurrency testing.
+
+**How the Output Was Used:**
+The suggested thread-based design was reviewed and integrated into the Agent. The implementation was compiled and tested by launching multiple Controller processes.
+
+**What I Learned:**
+I learned how a TCP server can continue accepting connections while separate worker threads process individual clients. I also learned the purpose of pthread_create(), pthread_detach(), and dynamically allocating per-client connection information.
