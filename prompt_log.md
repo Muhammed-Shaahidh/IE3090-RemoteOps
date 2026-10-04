@@ -40,3 +40,24 @@ The calculated values were checked against the formulas in the assignment specif
 
 **What I Learned:**
 I learned how the assignment derives unique implementation values from the registration number and why these values must remain consistent throughout the Agent, Controller, README, report and final submission.
+
+
+## Interaction 03
+
+**Date:** 04 October 2026
+
+**AI Tool:** ChatGPT
+
+**Stage:** Basic TCP Agent and Controller implementation
+
+**Prompt Summary:**
+Requested the next implementation stage after completing the initial RemoteOps project structure.
+
+**AI Assistance Received:**
+ChatGPT provided guidance for implementing the first TCP connection between the Agent and Controller using the BSD sockets API. The guidance covered socket creation, binding, listening, accepting connections, connecting from the Controller, and performing an initial send/receive test.
+
+**How the Output Was Used:**
+The suggested implementation was reviewed and used to build the initial TCP communication stage. The temporary HELLO exchange was used only to verify basic connectivity before implementing the assignment-defined protocol.
+
+**What I Learned:**
+I learned the roles of socket(), bind(), listen(), accept(), connect(), send() and recv() in a TCP client/server application. I also learned that the Agent uses the personalised port 9461 and that htons() converts the port value to network byte order.
