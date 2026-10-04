@@ -37,3 +37,14 @@ The main Agent thread now continuously accepts incoming Controller connections. 
 A separate dynamically allocated client_info_t structure is used for each Controller to prevent connection information from being overwritten between threads. Worker threads are detached using pthread_detach() so their resources can be reclaimed automatically when they terminate.
 
 The concurrency mechanism was tested by launching multiple Controller processes against the Agent. The Agent successfully created worker threads and continued accepting additional connections.
+
+
+## 04 October 2026 – Authentication and Protocol Framing
+
+The temporary HELLO development exchange was removed and replaced with the assignment-defined AUTH command.
+
+Each Controller session now begins in an unauthenticated state. The Agent validates the personalised authentication token OPS-0823 before allowing access to other RemoteOps functionality. Successful authentication returns OK AUTHENTICATED SID:3280, while incorrect authentication attempts and commands issued before authentication are rejected.
+
+A persistent command-processing loop was introduced inside each Controller worker thread so the connection can remain active after authentication and process additional RemoteOps commands in later implementation stages.
+
+Helper functions were also introduced for reliable protocol communication. recv_line() reads newline-terminated protocol messages, while send_all() ensures that an entire response buffer is transmitted even if a single send() call does not send every byte.

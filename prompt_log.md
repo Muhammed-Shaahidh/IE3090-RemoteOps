@@ -82,3 +82,24 @@ The suggested thread-based design was reviewed and integrated into the Agent. Th
 
 **What I Learned:**
 I learned how a TCP server can continue accepting connections while separate worker threads process individual clients. I also learned the purpose of pthread_create(), pthread_detach(), and dynamically allocating per-client connection information.
+
+
+## Interaction 05
+
+**Date:** 04 October 2026
+
+**AI Tool:** ChatGPT
+
+**Stage:** Authentication and protocol framing
+
+**Prompt Summary:**
+Requested the next implementation stage after completing multi-client concurrency.
+
+**AI Assistance Received:**
+ChatGPT provided guidance for replacing the temporary HELLO test with the assignment-defined AUTH protocol. The guidance included personalised token validation, per-session authentication state, rejection of unauthenticated commands, persistent Controller sessions, newline-based command handling and reliable send operations.
+
+**How the Output Was Used:**
+The authentication design was reviewed and integrated into the Agent and Controller. Successful authentication, invalid authentication and command access before authentication were tested.
+
+**What I Learned:**
+I learned how authentication state can be maintained independently for each TCP client session. I also learned that TCP is a byte-stream protocol and that application-level message boundaries must be handled explicitly rather than assuming that each recv() call corresponds to one complete command.
