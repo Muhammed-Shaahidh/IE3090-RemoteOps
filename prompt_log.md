@@ -191,3 +191,25 @@ I learned that TCP transfers a continuous byte stream and does not preserve file
 
 
 
+## Interaction 10
+
+**Date:** 05 October 2026
+
+**AI Tool:** ChatGPT
+
+**Stage:** GET file download
+
+**Prompt Summary:**
+Requested continuation of the RemoteOps assignment with the GET file-download stage while preserving the complete current Agent and Controller implementations.
+
+**AI Assistance Received:**
+ChatGPT provided guidance for implementing the assignment-defined GET protocol using a newline-terminated FILE_SEND header followed by an exact raw-byte transfer. The guidance included Agent-side binary file transmission, Controller-side exact-byte reception, filename validation, missing-file handling and SHA-256 integrity verification.
+
+**How the Output Was Used:**
+The suggested GET implementation was integrated into the existing Agent and Controller while retaining AUTH, SYSINFO, LISTPROC, EXEC, PUT and QUIT functionality. Text and binary downloads were tested and compared with their original files.
+
+**What I Learned:**
+I learned how a TCP application can transition safely between line-based control messages and binary payloads on the same persistent connection. I also learned why the receiver must consume exactly the announced file size before returning to normal command processing.
+
+
+

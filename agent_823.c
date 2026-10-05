@@ -74,12 +74,6 @@ ssize_t send_all(int socket_fd,
 }
 
 
-/*
- * Receive exactly the requested number of raw bytes.
- *
- * This is used for file transfer because TCP does
- * not preserve application message boundaries.
- */
 ssize_t recv_all(int socket_fd,
                  void *buffer,
                  size_t length)
@@ -117,9 +111,6 @@ ssize_t recv_all(int socket_fd,
 }
 
 
-/*
- * Receive one newline-terminated RemoteOps line.
- */
 ssize_t recv_line(int socket_fd,
                   char *buffer,
                   size_t buffer_size)
@@ -342,7 +333,8 @@ int get_uptime_seconds(long *uptime_seconds)
 
     fclose(file);
 
-    *uptime_seconds = (long)uptime;
+    *uptime_seconds =
+        (long)uptime;
 
     return 0;
 }
@@ -424,7 +416,9 @@ int handle_listproc(int client_fd)
             "ERR 006 PROCESS_LIST_FAILED SID:3280\n");
     }
 
-    size_t used = (size_t)written;
+    size_t used =
+        (size_t)written;
+
     char line[256];
     int first_process = 1;
 
@@ -476,7 +470,8 @@ int handle_listproc(int client_fd)
                process_entry,
                (size_t)entry_length);
 
-        used += (size_t)entry_length;
+        used +=
+            (size_t)entry_length;
 
         response[used] = '\0';
 
@@ -489,9 +484,10 @@ int handle_listproc(int client_fd)
     }
 
     int final_length =
-        snprintf(response + used,
-                 sizeof(response) - used,
-                 " SID:3280\n");
+        snprintf(
+            response + used,
+            sizeof(response) - used,
+            " SID:3280\n");
 
     if (final_length < 0 ||
         (size_t)final_length >=
@@ -604,7 +600,6 @@ int handle_exec(int client_fd,
     }
 
     char output[BUFFER_SIZE];
-
     size_t used = 0;
 
     output[0] = '\0';
@@ -665,18 +660,10 @@ int handle_exec(int client_fd,
 
 /*
  * ------------------------------------------------
- * PUT FILE UPLOAD
+ * FILE HELPERS
  * ------------------------------------------------
  */
 
-
-/*
- * Only allow a simple filename.
- *
- * This prevents a Controller from using values
- * such as ../../file to escape the personalised
- * storage directory.
- */
 int is_safe_filename(const char *filename)
 {
     if (filename == NULL ||
@@ -696,10 +683,32 @@ int is_safe_filename(const char *filename)
 }
 
 
+int ensure_storage_directory(void)
+{
+    if (mkdir("./agentfiles", 0755) < 0 &&
+        errno != EEXIST)
+    {
+        perror("mkdir ./agentfiles");
+        return -1;
+    }
+
+    if (mkdir(STORAGE_DIR, 0755) < 0 &&
+        errno != EEXIST)
+    {
+        perror("mkdir storage");
+        return -1;
+    }
+
+    return 0;
+}
+
+
 /*
- * Receive exactly filesize bytes and save them
- * under the personalised storage directory.
+ * ------------------------------------------------
+ * PUT
+ * ------------------------------------------------
  */
+
 int handle_put(int client_fd,
                const char *filename,
                long long filesize)
@@ -712,12 +721,6 @@ int handle_put(int client_fd,
             "ERR 007 INVALID_FILE_REQUEST SID:3280\n");
     }
 
-    /*
-     * Assignment-defined oversized file error.
-     *
-     * This implementation chooses 10 MB as the
-     * maximum accepted upload size.
-     */
     if (filesize > MAX_FILE_SIZE)
     {
         return send_response(
@@ -725,24 +728,8 @@ int handle_put(int client_fd,
             "ERR 004 FILE_TOO_LARGE SID:3280\n");
     }
 
-    /*
-     * Ensure personalised storage directory exists.
-     */
-    if (mkdir("./agentfiles", 0755) < 0 &&
-        errno != EEXIST)
+    if (ensure_storage_directory() < 0)
     {
-        perror("mkdir ./agentfiles");
-
-        return send_response(
-            client_fd,
-            "ERR 006 FILE_WRITE_FAILED SID:3280\n");
-    }
-
-    if (mkdir(STORAGE_DIR, 0755) < 0 &&
-        errno != EEXIST)
-    {
-        perror("mkdir storage");
-
         return send_response(
             client_fd,
             "ERR 006 FILE_WRITE_FAILED SID:3280\n");
@@ -778,20 +765,16 @@ int handle_put(int client_fd,
             "ERR 006 FILE_WRITE_FAILED SID:3280\n");
     }
 
-    /*
-     * Receive the raw file body in chunks.
-     *
-     * Do not use recv_line() here because file data
-     * may contain any byte, including newline bytes.
-     */
     char file_buffer[4096];
 
-    long long remaining = filesize;
+    long long remaining =
+        filesize;
 
     while (remaining > 0)
     {
         size_t chunk_size =
-            remaining > (long long)sizeof(file_buffer)
+            remaining >
+                    (long long)sizeof(file_buffer)
                 ? sizeof(file_buffer)
                 : (size_t)remaining;
 
@@ -805,11 +788,6 @@ int handle_put(int client_fd,
             fclose(file);
             remove(file_path);
 
-            printf(
-                "[THREAD %lu] PUT interrupted while receiving %s\n",
-                (unsigned long)pthread_self(),
-                filename);
-
             return -1;
         }
 
@@ -819,7 +797,8 @@ int handle_put(int client_fd,
                    (size_t)received,
                    file);
 
-        if (written != (size_t)received)
+        if (written !=
+            (size_t)received)
         {
             perror("fwrite");
 
@@ -862,6 +841,219 @@ int handle_put(int client_fd,
 
     return send_response(client_fd,
                          response);
+}
+
+
+/*
+ * ------------------------------------------------
+ * GET
+ * ------------------------------------------------
+ */
+
+
+/*
+ * Send a stored file to the Controller.
+ *
+ * Protocol:
+ *
+ * GET <filename>
+ *
+ * Response:
+ *
+ * OK FILE_SEND <filename> <filesize> SID:3280\n
+ * <exactly filesize raw bytes>
+ */
+int handle_get(int client_fd,
+               const char *filename)
+{
+    if (!is_safe_filename(filename))
+    {
+        return send_response(
+            client_fd,
+            "ERR 007 INVALID_FILE_REQUEST SID:3280\n");
+    }
+
+    if (ensure_storage_directory() < 0)
+    {
+        return send_response(
+            client_fd,
+            "ERR 006 FILE_READ_FAILED SID:3280\n");
+    }
+
+    char file_path[512];
+
+    int path_length =
+        snprintf(
+            file_path,
+            sizeof(file_path),
+            "%s/%s",
+            STORAGE_DIR,
+            filename);
+
+    if (path_length < 0 ||
+        (size_t)path_length >=
+            sizeof(file_path))
+    {
+        return send_response(
+            client_fd,
+            "ERR 007 INVALID_FILE_REQUEST SID:3280\n");
+    }
+
+
+    /*
+     * Open requested file in binary mode.
+     */
+    FILE *file =
+        fopen(file_path, "rb");
+
+    if (file == NULL)
+    {
+        /*
+         * The file is not available inside the
+         * Agent's personalised storage directory.
+         */
+        return send_response(
+            client_fd,
+            "ERR 005 FILE_NOT_FOUND SID:3280\n");
+    }
+
+
+    /*
+     * Determine file size.
+     */
+    if (fseek(file,
+              0,
+              SEEK_END) != 0)
+    {
+        perror("fseek");
+
+        fclose(file);
+
+        return send_response(
+            client_fd,
+            "ERR 006 FILE_READ_FAILED SID:3280\n");
+    }
+
+    long file_size =
+        ftell(file);
+
+    if (file_size < 0)
+    {
+        perror("ftell");
+
+        fclose(file);
+
+        return send_response(
+            client_fd,
+            "ERR 006 FILE_READ_FAILED SID:3280\n");
+    }
+
+    if (fseek(file,
+              0,
+              SEEK_SET) != 0)
+    {
+        perror("fseek");
+
+        fclose(file);
+
+        return send_response(
+            client_fd,
+            "ERR 006 FILE_READ_FAILED SID:3280\n");
+    }
+
+
+    /*
+     * First send the newline-terminated GET
+     * response header.
+     */
+    char response[BUFFER_SIZE];
+
+    int response_length =
+        snprintf(
+            response,
+            sizeof(response),
+            "OK FILE_SEND %s %ld SID:3280\n",
+            filename,
+            file_size);
+
+    if (response_length < 0 ||
+        (size_t)response_length >=
+            sizeof(response))
+    {
+        fclose(file);
+        return -1;
+    }
+
+    if (send_all(client_fd,
+                 response,
+                 (size_t)response_length) < 0)
+    {
+        perror("send GET header");
+
+        fclose(file);
+        return -1;
+    }
+
+
+    /*
+     * Immediately send exactly file_size raw
+     * bytes after the text response header.
+     */
+    char file_buffer[4096];
+
+    long total_sent = 0;
+
+    while (total_sent < file_size)
+    {
+        size_t remaining =
+            (size_t)(file_size -
+                     total_sent);
+
+        size_t chunk_size =
+            remaining > sizeof(file_buffer)
+                ? sizeof(file_buffer)
+                : remaining;
+
+        size_t bytes_read =
+            fread(file_buffer,
+                  1,
+                  chunk_size,
+                  file);
+
+        if (bytes_read == 0)
+        {
+            if (ferror(file))
+            {
+                perror("fread");
+            }
+
+            fclose(file);
+            return -1;
+        }
+
+        if (send_all(client_fd,
+                     file_buffer,
+                     bytes_read) < 0)
+        {
+            perror("send GET file");
+
+            fclose(file);
+            return -1;
+        }
+
+        total_sent +=
+            (long)bytes_read;
+    }
+
+    fclose(file);
+
+    printf(
+        "[THREAD %lu] GET sent: %s (%ld bytes)\n",
+        (unsigned long)pthread_self(),
+        filename,
+        total_sent);
+
+    return 0;
 }
 
 
@@ -970,10 +1162,6 @@ void *handle_controller(void *arg)
                     {
                         break;
                     }
-
-                    printf(
-                        "[THREAD %lu] Authentication failed.\n",
-                        (unsigned long)pthread_self());
                 }
             }
             else
@@ -1001,10 +1189,6 @@ void *handle_controller(void *arg)
                 break;
             }
 
-            printf(
-                "[THREAD %lu] SYSINFO response sent.\n",
-                (unsigned long)pthread_self());
-
             continue;
         }
 
@@ -1019,10 +1203,6 @@ void *handle_controller(void *arg)
             {
                 break;
             }
-
-            printf(
-                "[THREAD %lu] LISTPROC response sent.\n",
-                (unsigned long)pthread_self());
 
             continue;
         }
@@ -1043,11 +1223,6 @@ void *handle_controller(void *arg)
             {
                 break;
             }
-
-            printf(
-                "[THREAD %lu] EXEC request processed: %s\n",
-                (unsigned long)pthread_self(),
-                command_name);
 
             continue;
         }
@@ -1076,15 +1251,15 @@ void *handle_controller(void *arg)
         {
             char filename[256];
             long long filesize;
-
             char extra[2];
 
             int fields =
-                sscanf(line,
-                       "PUT %255s %lld %1s",
-                       filename,
-                       &filesize,
-                       extra);
+                sscanf(
+                    line,
+                    "PUT %255s %lld %1s",
+                    filename,
+                    &filesize,
+                    extra);
 
             if (fields != 2)
             {
@@ -1098,13 +1273,6 @@ void *handle_controller(void *arg)
                 continue;
             }
 
-            /*
-             * Important:
-             *
-             * After parsing the PUT line, the next
-             * bytes on the same TCP stream are the
-             * raw file body.
-             */
             if (handle_put(client_fd,
                            filename,
                            filesize) < 0)
@@ -1123,6 +1291,45 @@ void *handle_controller(void *arg)
 
 
         /*
+         * GET <filename>
+         */
+        if (strncmp(line,
+                    "GET ",
+                    4) == 0)
+        {
+            char filename[256];
+            char extra[2];
+
+            int fields =
+                sscanf(
+                    line,
+                    "GET %255s %1s",
+                    filename,
+                    extra);
+
+            if (fields != 1)
+            {
+                if (send_response(
+                        client_fd,
+                        "ERR 007 INVALID_FILE_REQUEST SID:3280\n") < 0)
+                {
+                    break;
+                }
+
+                continue;
+            }
+
+            if (handle_get(client_fd,
+                           filename) < 0)
+            {
+                break;
+            }
+
+            continue;
+        }
+
+
+        /*
          * QUIT
          */
         if (strcmp(line,
@@ -1135,14 +1342,13 @@ void *handle_controller(void *arg)
                 break;
             }
 
-            printf(
-                "[THREAD %lu] Controller requested QUIT.\n",
-                (unsigned long)pthread_self());
-
             break;
         }
 
 
+        /*
+         * Unknown authenticated command.
+         */
         if (send_response(
                 client_fd,
                 "ERR 003 UNKNOWN_COMMAND SID:3280\n") < 0)

@@ -94,3 +94,16 @@ The Agent validates the filename and stores uploaded files under the personalise
 A maximum upload size of 10 MB was selected for this implementation. Oversized files are rejected using the assignment-defined FILE_TOO_LARGE error.
 
 The implementation was tested using both a text file and a binary file. SHA-256 hashes were compared before and after transfer to verify byte-for-byte file integrity.
+
+
+## 05 October 2026 – GET File Download
+
+The RemoteOps GET command was implemented to allow an authenticated Controller to retrieve files from the Agent's personalised storage directory.
+
+GET uses two protocol phases. The Agent first sends a newline-terminated OK FILE_SEND response containing the filename and file size. It then immediately transmits exactly the declared number of raw file bytes.
+
+The Controller parses the response header before switching from line-based reception to byte-count-based reception. The downloaded file is written in binary mode, allowing both text and arbitrary binary data to be transferred correctly.
+
+Filename validation is applied before accessing Agent storage. Requests for unavailable files are rejected without starting a binary transfer, allowing the authenticated TCP session to remain synchronized and continue processing commands.
+
+GET was tested using both text and binary files. SHA-256 hashes of the original, Agent-stored and downloaded copies were compared to verify byte-for-byte integrity.
