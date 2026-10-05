@@ -124,3 +124,27 @@ The suggested design was reviewed and integrated into the Agent and Controller. 
 
 **What I Learned:**
 I learned how Linux exposes system information through the /proc virtual filesystem and how a persistent TCP session can process multiple application-level commands after authentication.
+
+
+## Interaction 07
+
+**Date:** 05 October 2026
+
+**AI Tool:** ChatGPT
+
+**Stage:** LISTPROC process listing
+
+**Prompt Summary:**
+Requested continuation of the RemoteOps assignment using the uploaded assignment brief as the authoritative protocol specification.
+
+**AI Assistance Received:**
+ChatGPT reviewed the assignment-defined LISTPROC protocol and provided guidance for obtaining a Linux process snapshot using popen(), formatting it as the required single-line OK PROCS response, integrating LISTPROC into the authenticated command handler, testing the result and documenting the implementation.
+
+**How the Output Was Used:**
+The proposed approach was reviewed and integrated into the existing Agent. The Controller command menu was updated and LISTPROC was tested against the Linux process table.
+
+**What I Learned:**
+I learned how popen() can be used to read the output of another Linux process through a stream and how dynamically generated operating-system information can be converted into an application-level TCP protocol response.
+
+
+

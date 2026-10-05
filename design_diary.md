@@ -59,3 +59,14 @@ The Controller was also changed from an authentication-only test program into a 
 QUIT was implemented to provide graceful session termination. The Agent returns OK BYE SID:3280 before closing the corresponding Controller connection.
 
 SYSINFO was tested multiple times within the same authenticated TCP session and its values were compared with the underlying Linux /proc information.
+
+
+## 05 October 2026 – LISTPROC Process Monitoring
+
+The RemoteOps Agent was extended with the LISTPROC command. The implementation obtains a snapshot of currently running Linux processes using the ps utility through popen().
+
+Process information is read from the pipe, parsed into process identifiers and command names, and formatted as a comma-separated list according to the assignment-defined OK PROCS response format. The personalised SID:3280 tag is appended to the response.
+
+LISTPROC was tested repeatedly within an authenticated persistent TCP session. The returned process information was compared with direct output from the Linux ps command to verify the implementation.
+
+The existing AUTH, SYSINFO and QUIT functionality was also retained and checked to ensure that the new command did not break previously implemented protocol features.

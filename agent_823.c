@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -26,10 +28,6 @@ typedef struct
 
 /*
  * Send all bytes in the supplied buffer.
- *
- * send() is not guaranteed to transmit the complete
- * buffer in one call, so continue until all bytes
- * have been transmitted or an error occurs.
  */
 ssize_t send_all(int socket_fd,
                  const void *buffer,
@@ -72,11 +70,7 @@ ssize_t send_all(int socket_fd,
  * Receive one newline-terminated RemoteOps
  * protocol line.
  *
- * The newline is removed before returning
- * the command to the caller.
- *
  * Return values:
- *
  *   > 0 : number of characters received
  *     0 : peer disconnected
  *    -1 : socket error
@@ -128,7 +122,7 @@ ssize_t recv_line(int socket_fd,
             buffer[position] = '\0';
 
             /*
-             * Support both LF and CRLF line endings.
+             * Support both LF and CRLF.
              */
             if (position > 0 &&
                 buffer[position - 1] == '\r')
@@ -146,8 +140,7 @@ ssize_t recv_line(int socket_fd,
     buffer[position] = '\0';
 
     /*
-     * If the line is too long, consume the
-     * remaining characters until the newline.
+     * Consume the remainder of an oversized line.
      */
     if (position == buffer_size - 1)
     {
@@ -186,7 +179,7 @@ ssize_t recv_line(int socket_fd,
 
 
 /*
- * Send a complete RemoteOps protocol response.
+ * Send a complete RemoteOps response.
  */
 int send_response(int client_fd,
                   const char *response)
@@ -204,8 +197,14 @@ int send_response(int client_fd,
 
 
 /*
- * Read the one-minute system load average
- * from /proc/loadavg.
+ * ------------------------------------------------
+ * SYSINFO SUPPORT FUNCTIONS
+ * ------------------------------------------------
+ */
+
+
+/*
+ * Read the one-minute load average.
  */
 int get_cpu_load(double *cpu_load)
 {
@@ -218,7 +217,9 @@ int get_cpu_load(double *cpu_load)
         return -1;
     }
 
-    if (fscanf(file, "%lf", cpu_load) != 1)
+    if (fscanf(file,
+               "%lf",
+               cpu_load) != 1)
     {
         fclose(file);
         return -1;
@@ -231,14 +232,10 @@ int get_cpu_load(double *cpu_load)
 
 
 /*
- * Determine currently used memory in MB.
+ * Calculate currently used memory in MB.
  *
- * Linux provides memory statistics through
- * /proc/meminfo.
- *
- * Used memory:
- *
- *     MemTotal - MemAvailable
+ * Used memory =
+ * MemTotal - MemAvailable
  */
 int get_memory_used_mb(long *memory_used_mb)
 {
@@ -289,10 +286,6 @@ int get_memory_used_mb(long *memory_used_mb)
         return -1;
     }
 
-    /*
-     * Values in /proc/meminfo are expressed in kB.
-     * Convert the calculated used value to MB.
-     */
     *memory_used_mb =
         (mem_total_kb - mem_available_kb) / 1024;
 
@@ -301,7 +294,7 @@ int get_memory_used_mb(long *memory_used_mb)
 
 
 /*
- * Read system uptime from /proc/uptime.
+ * Read system uptime in seconds.
  */
 int get_uptime_seconds(long *uptime_seconds)
 {
@@ -316,7 +309,9 @@ int get_uptime_seconds(long *uptime_seconds)
 
     double uptime;
 
-    if (fscanf(file, "%lf", &uptime) != 1)
+    if (fscanf(file,
+               "%lf",
+               &uptime) != 1)
     {
         fclose(file);
         return -1;
@@ -324,22 +319,20 @@ int get_uptime_seconds(long *uptime_seconds)
 
     fclose(file);
 
-    /*
-     * The protocol requires uptime in seconds.
-     */
-    *uptime_seconds = (long)uptime;
+    *uptime_seconds =
+        (long)uptime;
 
     return 0;
 }
 
 
 /*
- * Handle an authenticated SYSINFO command.
+ * Handle SYSINFO.
  *
- * Response format:
+ * Protocol:
  *
  * OK SYSINFO <cpu_load> <mem_used_mb>
- *            <uptime_sec> SID:3280
+ * <uptime_sec> SID:3280
  */
 int handle_sysinfo(int client_fd)
 {
@@ -347,35 +340,32 @@ int handle_sysinfo(int client_fd)
     long memory_used_mb;
     long uptime_seconds;
 
-    /*
-     * Retrieve all required Linux system
-     * information.
-     */
     if (get_cpu_load(&cpu_load) < 0 ||
         get_memory_used_mb(&memory_used_mb) < 0 ||
         get_uptime_seconds(&uptime_seconds) < 0)
     {
         return send_response(
             client_fd,
-            "ERR 004 INTERNAL_ERROR SID:3280\n");
+            "ERR 006 SYSINFO_FAILED SID:3280\n");
     }
 
     char response[BUFFER_SIZE];
 
     int written =
-        snprintf(response,
-                 sizeof(response),
-                 "OK SYSINFO %.2f %ld %ld SID:3280\n",
-                 cpu_load,
-                 memory_used_mb,
-                 uptime_seconds);
+        snprintf(
+            response,
+            sizeof(response),
+            "OK SYSINFO %.2f %ld %ld SID:3280\n",
+            cpu_load,
+            memory_used_mb,
+            uptime_seconds);
 
     if (written < 0 ||
         (size_t)written >= sizeof(response))
     {
         return send_response(
             client_fd,
-            "ERR 004 INTERNAL_ERROR SID:3280\n");
+            "ERR 006 SYSINFO_FAILED SID:3280\n");
     }
 
     return send_response(client_fd,
@@ -384,10 +374,161 @@ int handle_sysinfo(int client_fd)
 
 
 /*
- * Handle one Controller session.
+ * ------------------------------------------------
+ * LISTPROC SUPPORT
+ * ------------------------------------------------
+ */
+
+
+/*
+ * Handle LISTPROC.
  *
- * Each connected Controller is processed by
- * its own POSIX worker thread.
+ * Assignment protocol:
+ *
+ * OK PROCS <comma-separated process names/PIDs>
+ * SID:3280
+ *
+ * A process snapshot is obtained using ps through
+ * popen().
+ */
+int handle_listproc(int client_fd)
+{
+    FILE *process_pipe =
+        popen("ps -eo pid=,comm=", "r");
+
+    if (process_pipe == NULL)
+    {
+        perror("popen");
+
+        return send_response(
+            client_fd,
+            "ERR 006 PROCESS_LIST_FAILED SID:3280\n");
+    }
+
+    char response[BUFFER_SIZE];
+
+    int written =
+        snprintf(response,
+                 sizeof(response),
+                 "OK PROCS ");
+
+    if (written < 0 ||
+        (size_t)written >= sizeof(response))
+    {
+        pclose(process_pipe);
+
+        return send_response(
+            client_fd,
+            "ERR 006 PROCESS_LIST_FAILED SID:3280\n");
+    }
+
+    size_t used =
+        (size_t)written;
+
+    char line[256];
+
+    int first_process = 1;
+
+    while (fgets(line,
+                 sizeof(line),
+                 process_pipe) != NULL)
+    {
+        int pid;
+
+        char process_name[128];
+
+        /*
+         * ps output contains:
+         *
+         * PID PROCESS_NAME
+         */
+        if (sscanf(line,
+                   "%d %127s",
+                   &pid,
+                   process_name) != 2)
+        {
+            continue;
+        }
+
+        char process_entry[160];
+
+        int entry_length =
+            snprintf(
+                process_entry,
+                sizeof(process_entry),
+                "%s%d/%s",
+                first_process ? "" : ",",
+                pid,
+                process_name);
+
+        if (entry_length < 0 ||
+            (size_t)entry_length >=
+                sizeof(process_entry))
+        {
+            continue;
+        }
+
+        /*
+         * Reserve enough space for:
+         *
+         * " SID:3280\n"
+         *
+         * plus the terminating null character.
+         */
+        size_t remaining_required =
+            (size_t)entry_length +
+            strlen(" SID:3280\n") +
+            1;
+
+        if (used + remaining_required >
+            sizeof(response))
+        {
+            break;
+        }
+
+        memcpy(response + used,
+               process_entry,
+               (size_t)entry_length);
+
+        used +=
+            (size_t)entry_length;
+
+        response[used] = '\0';
+
+        first_process = 0;
+    }
+
+    if (pclose(process_pipe) == -1)
+    {
+        perror("pclose");
+    }
+
+    /*
+     * Append the mandatory personalised SID.
+     */
+    int final_length =
+        snprintf(response + used,
+                 sizeof(response) - used,
+                 " SID:3280\n");
+
+    if (final_length < 0 ||
+        (size_t)final_length >=
+            sizeof(response) - used)
+    {
+        return send_response(
+            client_fd,
+            "ERR 006 PROCESS_LIST_FAILED SID:3280\n");
+    }
+
+    return send_response(client_fd,
+                         response);
+}
+
+
+/*
+ * ------------------------------------------------
+ * CONTROLLER SESSION HANDLER
+ * ------------------------------------------------
  */
 void *handle_controller(void *arg)
 {
@@ -400,10 +541,6 @@ void *handle_controller(void *arg)
     struct sockaddr_in client_addr =
         client_info->client_addr;
 
-    /*
-     * The worker thread now owns the copied
-     * Controller information.
-     */
     free(client_info);
 
     printf(
@@ -415,16 +552,11 @@ void *handle_controller(void *arg)
     char line[BUFFER_SIZE];
 
     /*
-     * Authentication state is maintained
-     * independently for this Controller session.
+     * Each Controller session has its own
+     * authentication state.
      */
     int authenticated = 0;
 
-    /*
-     * Keep the connection open so multiple
-     * RemoteOps commands can be processed during
-     * the same authenticated session.
-     */
     while (1)
     {
         ssize_t result =
@@ -432,9 +564,6 @@ void *handle_controller(void *arg)
                       line,
                       sizeof(line));
 
-        /*
-         * Controller closed the connection.
-         */
         if (result == 0)
         {
             printf(
@@ -444,19 +573,12 @@ void *handle_controller(void *arg)
             break;
         }
 
-        /*
-         * Socket receive error.
-         */
         if (result == -1)
         {
             perror("recv");
             break;
         }
 
-        /*
-         * Protocol command exceeded the
-         * supported line length.
-         */
         if (result == -2)
         {
             if (send_response(
@@ -474,13 +596,11 @@ void *handle_controller(void *arg)
             (unsigned long)pthread_self(),
             line);
 
+
         /*
          * ------------------------------------------------
-         * AUTHENTICATION
+         * AUTH
          * ------------------------------------------------
-         *
-         * AUTH must succeed before any other
-         * RemoteOps command is accepted.
          */
         if (!authenticated)
         {
@@ -523,10 +643,6 @@ void *handle_controller(void *arg)
             }
             else
             {
-                /*
-                 * No RemoteOps command is allowed
-                 * before successful AUTH.
-                 */
                 if (send_response(
                         client_fd,
                         "ERR 001 AUTH_FAILED SID:3280\n") < 0)
@@ -547,8 +663,6 @@ void *handle_controller(void *arg)
          * ------------------------------------------------
          * SYSINFO
          * ------------------------------------------------
-         *
-         * Return CPU load, used memory and uptime.
          */
         if (strcmp(line,
                    "SYSINFO") == 0)
@@ -568,11 +682,29 @@ void *handle_controller(void *arg)
 
         /*
          * ------------------------------------------------
+         * LISTPROC
+         * ------------------------------------------------
+         */
+        if (strcmp(line,
+                   "LISTPROC") == 0)
+        {
+            if (handle_listproc(client_fd) < 0)
+            {
+                break;
+            }
+
+            printf(
+                "[THREAD %lu] LISTPROC response sent.\n",
+                (unsigned long)pthread_self());
+
+            continue;
+        }
+
+
+        /*
+         * ------------------------------------------------
          * QUIT
          * ------------------------------------------------
-         *
-         * Gracefully terminate this Controller
-         * session.
          */
         if (strcmp(line,
                    "QUIT") == 0)
@@ -593,8 +725,7 @@ void *handle_controller(void *arg)
 
 
         /*
-         * Any authenticated command that is not
-         * currently implemented is rejected.
+         * Authenticated but unknown command.
          */
         if (send_response(
                 client_fd,
@@ -614,6 +745,11 @@ void *handle_controller(void *arg)
 }
 
 
+/*
+ * ------------------------------------------------
+ * AGENT MAIN
+ * ------------------------------------------------
+ */
 int main(void)
 {
     int server_fd;
@@ -621,7 +757,7 @@ int main(void)
     struct sockaddr_in server_addr;
 
     /*
-     * Create the Agent IPv4 TCP listening socket.
+     * Create IPv4 TCP listening socket.
      */
     server_fd =
         socket(AF_INET,
@@ -634,9 +770,9 @@ int main(void)
         return EXIT_FAILURE;
     }
 
+
     /*
-     * Allow the listening address to be reused
-     * during repeated development/testing.
+     * Allow address reuse during testing.
      */
     int reuse = 1;
 
@@ -652,6 +788,7 @@ int main(void)
         return EXIT_FAILURE;
     }
 
+
     memset(&server_addr,
            0,
            sizeof(server_addr));
@@ -665,9 +802,9 @@ int main(void)
     server_addr.sin_port =
         htons(AGENT_PORT);
 
+
     /*
-     * Bind the Agent to personalised TCP
-     * port 9461.
+     * Bind to personalised port 9461.
      */
     if (bind(server_fd,
              (struct sockaddr *)&server_addr,
@@ -679,12 +816,9 @@ int main(void)
         return EXIT_FAILURE;
     }
 
+
     /*
-     * Begin listening for Controller connections.
-     *
-     * A backlog of 10 is sufficient for the
-     * assignment requirement of at least five
-     * simultaneous Controllers.
+     * Listen for Controller connections.
      */
     if (listen(server_fd,
                10) < 0)
@@ -694,6 +828,7 @@ int main(void)
         close(server_fd);
         return EXIT_FAILURE;
     }
+
 
     printf("========================================\n");
     printf("        RemoteOps Agent\n");
@@ -707,12 +842,9 @@ int main(void)
     printf("----------------------------------------\n");
     printf("Waiting for Controller connections...\n\n");
 
+
     /*
-     * Main Agent acceptance loop.
-     *
-     * The main thread remains responsible for
-     * accepting connections while worker threads
-     * process individual Controller sessions.
+     * Main Agent connection acceptance loop.
      */
     while (1)
     {
@@ -742,11 +874,12 @@ int main(void)
             continue;
         }
 
+
         pthread_t thread_id;
 
         /*
-         * Create an independent worker thread for
-         * the newly connected Controller.
+         * Create one worker thread for this
+         * Controller connection.
          */
         int result =
             pthread_create(
@@ -768,12 +901,13 @@ int main(void)
             continue;
         }
 
+
         /*
-         * No pthread_join() is required for this
-         * worker thread.
+         * Worker cleans up automatically when done.
          */
         pthread_detach(thread_id);
     }
+
 
     close(server_fd);
 
