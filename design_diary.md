@@ -150,3 +150,18 @@ The difference between text-command framing and file-transfer framing was review
 Authentication failures, unknown commands, prohibited EXEC commands, missing files, oversized PUT requests, invalid UDP ports and oversized control lines were tested. Recoverable protocol errors did not terminate the authenticated TCP session.
 
 An oversized control line was also tested to verify that the Agent discards the remainder of the invalid line and correctly processes the next valid command.
+
+
+## 05 October 2026 – Final Integration and Concurrency Testing
+
+Final integration testing was performed on the completed RemoteOps implementation.
+
+A clean build was first produced and the personalised configuration values were verified. Authentication, SYSINFO, LISTPROC, all five whitelisted EXEC commands, PUT, GET, UDP monitoring, logging and QUIT were tested as part of complete authenticated Controller sessions.
+
+A PUT-to-GET round-trip test was performed and SHA-256 hashes were compared between the original Controller file, the Agent-stored file and the downloaded copy to verify transfer integrity.
+
+Concurrency was tested using five simultaneous Controller connections. Each Controller authenticated independently and executed RemoteOps commands while the other sessions remained active. The Agent handled the sessions using separate POSIX worker threads.
+
+Protocol error cases and unexpected Controller termination were also retested. An individual Controller could disconnect without terminating the Agent, and a new Controller was able to connect afterwards.
+
+The final activity log was inspected to verify that connections, commands, file transfers, monitoring and session termination were recorded correctly.

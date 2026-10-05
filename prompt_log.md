@@ -276,3 +276,25 @@ The existing RemoteOps Agent was tested using netcat and controlled shell input 
 
 **What I Learned:**
 I learned that TCP does not preserve application message boundaries and that an application must implement its own framing mechanism. I also learned why RemoteOps uses newline framing for control messages but exact byte-count framing for raw file transfers.
+
+
+
+## Interaction 14
+
+**Date:** 05 October 2026
+
+**AI Tool:** ChatGPT
+
+**Stage:** Final system integration and concurrency testing
+
+**Prompt Summary:**
+Requested continuation of the RemoteOps assignment after completing protocol framing and error-handling verification.
+
+**AI Assistance Received:**
+ChatGPT provided a structured final testing procedure covering clean compilation, personalisation verification, complete authenticated sessions, PUT/GET integrity testing, UDP monitoring, five simultaneous Controller connections, unexpected disconnection, protocol errors and activity-log verification.
+
+**How the Output Was Used:**
+The test procedure was followed against the completed Agent and Controller implementation. Results and genuine terminal screenshots were recorded for the implementation report.
+
+**What I Learned:**
+I learned how integration testing differs from testing individual functions. I also learned how to verify a concurrent TCP server by maintaining several simultaneous client sessions and confirming that each session is processed independently.
