@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <ctype.h>
 #include <sys/stat.h>
+#include <time.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -23,12 +24,26 @@
 #define STORAGE_DIR "./agentfiles/IT24610823"
 #define MAX_FILE_SIZE (10 * 1024 * 1024)
 
+#define MONITOR_INTERVAL 5
+
 
 typedef struct
 {
     int client_fd;
     struct sockaddr_in client_addr;
 } client_info_t;
+
+
+typedef struct
+{
+    pthread_mutex_t lock;
+    pthread_cond_t cond;
+
+    int active;
+    int stop_requested;
+
+    struct sockaddr_in destination;
+} monitor_context_t;
 
 
 /*
@@ -224,14 +239,13 @@ int send_response(int client_fd,
 
 /*
  * ------------------------------------------------
- * SYSINFO
+ * SYSTEM INFORMATION HELPERS
  * ------------------------------------------------
  */
 
 int get_cpu_load(double *cpu_load)
 {
-    FILE *file =
-        fopen("/proc/loadavg", "r");
+    FILE *file = fopen("/proc/loadavg", "r");
 
     if (file == NULL)
     {
@@ -239,24 +253,20 @@ int get_cpu_load(double *cpu_load)
         return -1;
     }
 
-    if (fscanf(file,
-               "%lf",
-               cpu_load) != 1)
+    if (fscanf(file, "%lf", cpu_load) != 1)
     {
         fclose(file);
         return -1;
     }
 
     fclose(file);
-
     return 0;
 }
 
 
 int get_memory_used_mb(long *memory_used_mb)
 {
-    FILE *file =
-        fopen("/proc/meminfo", "r");
+    FILE *file = fopen("/proc/meminfo", "r");
 
     if (file == NULL)
     {
@@ -303,8 +313,7 @@ int get_memory_used_mb(long *memory_used_mb)
     }
 
     *memory_used_mb =
-        (mem_total_kb -
-         mem_available_kb) / 1024;
+        (mem_total_kb - mem_available_kb) / 1024;
 
     return 0;
 }
@@ -312,8 +321,7 @@ int get_memory_used_mb(long *memory_used_mb)
 
 int get_uptime_seconds(long *uptime_seconds)
 {
-    FILE *file =
-        fopen("/proc/uptime", "r");
+    FILE *file = fopen("/proc/uptime", "r");
 
     if (file == NULL)
     {
@@ -323,9 +331,7 @@ int get_uptime_seconds(long *uptime_seconds)
 
     double uptime;
 
-    if (fscanf(file,
-               "%lf",
-               &uptime) != 1)
+    if (fscanf(file, "%lf", &uptime) != 1)
     {
         fclose(file);
         return -1;
@@ -333,12 +339,17 @@ int get_uptime_seconds(long *uptime_seconds)
 
     fclose(file);
 
-    *uptime_seconds =
-        (long)uptime;
+    *uptime_seconds = (long)uptime;
 
     return 0;
 }
 
+
+/*
+ * ------------------------------------------------
+ * SYSINFO
+ * ------------------------------------------------
+ */
 
 int handle_sysinfo(int client_fd)
 {
@@ -374,8 +385,7 @@ int handle_sysinfo(int client_fd)
             "ERR 006 SYSINFO_FAILED SID:3280\n");
     }
 
-    return send_response(client_fd,
-                         response);
+    return send_response(client_fd, response);
 }
 
 
@@ -416,9 +426,7 @@ int handle_listproc(int client_fd)
             "ERR 006 PROCESS_LIST_FAILED SID:3280\n");
     }
 
-    size_t used =
-        (size_t)written;
-
+    size_t used = (size_t)written;
     char line[256];
     int first_process = 1;
 
@@ -470,9 +478,7 @@ int handle_listproc(int client_fd)
                process_entry,
                (size_t)entry_length);
 
-        used +=
-            (size_t)entry_length;
-
+        used += (size_t)entry_length;
         response[used] = '\0';
 
         first_process = 0;
@@ -498,8 +504,7 @@ int handle_listproc(int client_fd)
             "ERR 006 PROCESS_LIST_FAILED SID:3280\n");
     }
 
-    return send_response(client_fd,
-                         response);
+    return send_response(client_fd, response);
 }
 
 
@@ -555,28 +560,23 @@ int handle_exec(int client_fd,
 {
     const char *linux_command = NULL;
 
-    if (strcmp(command_name,
-               "DATE") == 0)
+    if (strcmp(command_name, "DATE") == 0)
     {
         linux_command = "date";
     }
-    else if (strcmp(command_name,
-                    "UPTIME") == 0)
+    else if (strcmp(command_name, "UPTIME") == 0)
     {
         linux_command = "uptime";
     }
-    else if (strcmp(command_name,
-                    "DISKFREE") == 0)
+    else if (strcmp(command_name, "DISKFREE") == 0)
     {
         linux_command = "df -h /";
     }
-    else if (strcmp(command_name,
-                    "HOSTNAME") == 0)
+    else if (strcmp(command_name, "HOSTNAME") == 0)
     {
         linux_command = "hostname";
     }
-    else if (strcmp(command_name,
-                    "WHOAMI") == 0)
+    else if (strcmp(command_name, "WHOAMI") == 0)
     {
         linux_command = "whoami";
     }
@@ -632,8 +632,7 @@ int handle_exec(int client_fd,
 
     if (strlen(output) == 0)
     {
-        strcpy(output,
-               "NO_OUTPUT");
+        strcpy(output, "NO_OUTPUT");
     }
 
     char response[BUFFER_SIZE];
@@ -653,8 +652,7 @@ int handle_exec(int client_fd,
             "ERR 006 EXEC_FAILED SID:3280\n");
     }
 
-    return send_response(client_fd,
-                         response);
+    return send_response(client_fd, response);
 }
 
 
@@ -738,23 +736,22 @@ int handle_put(int client_fd,
     char file_path[512];
 
     int path_length =
-        snprintf(file_path,
-                 sizeof(file_path),
-                 "%s/%s",
-                 STORAGE_DIR,
-                 filename);
+        snprintf(
+            file_path,
+            sizeof(file_path),
+            "%s/%s",
+            STORAGE_DIR,
+            filename);
 
     if (path_length < 0 ||
-        (size_t)path_length >=
-            sizeof(file_path))
+        (size_t)path_length >= sizeof(file_path))
     {
         return send_response(
             client_fd,
             "ERR 007 INVALID_FILE_REQUEST SID:3280\n");
     }
 
-    FILE *file =
-        fopen(file_path, "wb");
+    FILE *file = fopen(file_path, "wb");
 
     if (file == NULL)
     {
@@ -767,8 +764,7 @@ int handle_put(int client_fd,
 
     char file_buffer[4096];
 
-    long long remaining =
-        filesize;
+    long long remaining = filesize;
 
     while (remaining > 0)
     {
@@ -787,7 +783,6 @@ int handle_put(int client_fd,
         {
             fclose(file);
             remove(file_path);
-
             return -1;
         }
 
@@ -797,8 +792,7 @@ int handle_put(int client_fd,
                    (size_t)received,
                    file);
 
-        if (written !=
-            (size_t)received)
+        if (written != (size_t)received)
         {
             perror("fwrite");
 
@@ -839,8 +833,7 @@ int handle_put(int client_fd,
         return -1;
     }
 
-    return send_response(client_fd,
-                         response);
+    return send_response(client_fd, response);
 }
 
 
@@ -850,19 +843,6 @@ int handle_put(int client_fd,
  * ------------------------------------------------
  */
 
-
-/*
- * Send a stored file to the Controller.
- *
- * Protocol:
- *
- * GET <filename>
- *
- * Response:
- *
- * OK FILE_SEND <filename> <filesize> SID:3280\n
- * <exactly filesize raw bytes>
- */
 int handle_get(int client_fd,
                const char *filename)
 {
@@ -891,39 +871,23 @@ int handle_get(int client_fd,
             filename);
 
     if (path_length < 0 ||
-        (size_t)path_length >=
-            sizeof(file_path))
+        (size_t)path_length >= sizeof(file_path))
     {
         return send_response(
             client_fd,
             "ERR 007 INVALID_FILE_REQUEST SID:3280\n");
     }
 
-
-    /*
-     * Open requested file in binary mode.
-     */
-    FILE *file =
-        fopen(file_path, "rb");
+    FILE *file = fopen(file_path, "rb");
 
     if (file == NULL)
     {
-        /*
-         * The file is not available inside the
-         * Agent's personalised storage directory.
-         */
         return send_response(
             client_fd,
             "ERR 005 FILE_NOT_FOUND SID:3280\n");
     }
 
-
-    /*
-     * Determine file size.
-     */
-    if (fseek(file,
-              0,
-              SEEK_END) != 0)
+    if (fseek(file, 0, SEEK_END) != 0)
     {
         perror("fseek");
 
@@ -934,8 +898,7 @@ int handle_get(int client_fd,
             "ERR 006 FILE_READ_FAILED SID:3280\n");
     }
 
-    long file_size =
-        ftell(file);
+    long file_size = ftell(file);
 
     if (file_size < 0)
     {
@@ -948,9 +911,7 @@ int handle_get(int client_fd,
             "ERR 006 FILE_READ_FAILED SID:3280\n");
     }
 
-    if (fseek(file,
-              0,
-              SEEK_SET) != 0)
+    if (fseek(file, 0, SEEK_SET) != 0)
     {
         perror("fseek");
 
@@ -961,11 +922,6 @@ int handle_get(int client_fd,
             "ERR 006 FILE_READ_FAILED SID:3280\n");
     }
 
-
-    /*
-     * First send the newline-terminated GET
-     * response header.
-     */
     char response[BUFFER_SIZE];
 
     int response_length =
@@ -977,8 +933,7 @@ int handle_get(int client_fd,
             file_size);
 
     if (response_length < 0 ||
-        (size_t)response_length >=
-            sizeof(response))
+        (size_t)response_length >= sizeof(response))
     {
         fclose(file);
         return -1;
@@ -994,11 +949,6 @@ int handle_get(int client_fd,
         return -1;
     }
 
-
-    /*
-     * Immediately send exactly file_size raw
-     * bytes after the text response header.
-     */
     char file_buffer[4096];
 
     long total_sent = 0;
@@ -1006,8 +956,7 @@ int handle_get(int client_fd,
     while (total_sent < file_size)
     {
         size_t remaining =
-            (size_t)(file_size -
-                     total_sent);
+            (size_t)(file_size - total_sent);
 
         size_t chunk_size =
             remaining > sizeof(file_buffer)
@@ -1041,8 +990,7 @@ int handle_get(int client_fd,
             return -1;
         }
 
-        total_sent +=
-            (long)bytes_read;
+        total_sent += (long)bytes_read;
     }
 
     fclose(file);
@@ -1054,6 +1002,242 @@ int handle_get(int client_fd,
         total_sent);
 
     return 0;
+}
+
+
+/*
+ * ------------------------------------------------
+ * UDP MONITORING
+ * ------------------------------------------------
+ */
+
+
+/*
+ * UDP monitoring runs in a separate thread for
+ * each authenticated Controller session.
+ */
+void *monitor_thread(void *arg)
+{
+    monitor_context_t *context =
+        (monitor_context_t *)arg;
+
+    int udp_socket =
+        socket(AF_INET,
+               SOCK_DGRAM,
+               0);
+
+    if (udp_socket < 0)
+    {
+        perror("UDP socket");
+
+        pthread_mutex_lock(&context->lock);
+        context->active = 0;
+        pthread_mutex_unlock(&context->lock);
+
+        return NULL;
+    }
+
+    while (1)
+    {
+        struct sockaddr_in destination;
+
+        pthread_mutex_lock(&context->lock);
+
+        if (context->stop_requested)
+        {
+            pthread_mutex_unlock(&context->lock);
+            break;
+        }
+
+        destination = context->destination;
+
+        pthread_mutex_unlock(&context->lock);
+
+
+        /*
+         * Collect current system statistics.
+         */
+        double cpu_load;
+        long memory_used_mb;
+        long uptime_seconds;
+
+        if (get_cpu_load(&cpu_load) == 0 &&
+            get_memory_used_mb(&memory_used_mb) == 0 &&
+            get_uptime_seconds(&uptime_seconds) == 0)
+        {
+            char datagram[BUFFER_SIZE];
+
+            int length =
+                snprintf(
+                    datagram,
+                    sizeof(datagram),
+                    "SYSINFO %.2f %ld %ld SID:3280",
+                    cpu_load,
+                    memory_used_mb,
+                    uptime_seconds);
+
+            if (length > 0 &&
+                (size_t)length < sizeof(datagram))
+            {
+                ssize_t sent =
+                    sendto(
+                        udp_socket,
+                        datagram,
+                        (size_t)length,
+                        0,
+                        (struct sockaddr *)&destination,
+                        sizeof(destination));
+
+                if (sent < 0)
+                {
+                    perror("sendto");
+                }
+            }
+        }
+
+
+        /*
+         * Wait for 5 seconds, but use a condition
+         * variable so MONITOR STOP can wake this
+         * thread immediately instead of waiting
+         * for the full interval.
+         */
+        struct timespec timeout;
+
+        if (clock_gettime(
+                CLOCK_REALTIME,
+                &timeout) != 0)
+        {
+            perror("clock_gettime");
+            break;
+        }
+
+        timeout.tv_sec += MONITOR_INTERVAL;
+
+        pthread_mutex_lock(&context->lock);
+
+        if (!context->stop_requested)
+        {
+            pthread_cond_timedwait(
+                &context->cond,
+                &context->lock,
+                &timeout);
+        }
+
+        int should_stop =
+            context->stop_requested;
+
+        pthread_mutex_unlock(&context->lock);
+
+        if (should_stop)
+        {
+            break;
+        }
+    }
+
+    close(udp_socket);
+
+    pthread_mutex_lock(&context->lock);
+    context->active = 0;
+    pthread_mutex_unlock(&context->lock);
+
+    return NULL;
+}
+
+
+int start_monitoring(
+    monitor_context_t *context,
+    pthread_t *monitor_tid,
+    const struct sockaddr_in *client_addr,
+    int udp_port)
+{
+    if (udp_port < 1 ||
+        udp_port > 65535)
+    {
+        return -1;
+    }
+
+    pthread_mutex_lock(&context->lock);
+
+    if (context->active)
+    {
+        pthread_mutex_unlock(&context->lock);
+        return -2;
+    }
+
+    memset(&context->destination,
+           0,
+           sizeof(context->destination));
+
+    context->destination.sin_family =
+        AF_INET;
+
+    /*
+     * The assignment requires UDP statistics to be
+     * sent to the Controller IP. The IP is obtained
+     * from the accepted TCP connection.
+     */
+    context->destination.sin_addr =
+        client_addr->sin_addr;
+
+    context->destination.sin_port =
+        htons((uint16_t)udp_port);
+
+    context->stop_requested = 0;
+    context->active = 1;
+
+    pthread_mutex_unlock(&context->lock);
+
+    int result =
+        pthread_create(
+            monitor_tid,
+            NULL,
+            monitor_thread,
+            context);
+
+    if (result != 0)
+    {
+        fprintf(
+            stderr,
+            "monitor pthread_create failed: %s\n",
+            strerror(result));
+
+        pthread_mutex_lock(&context->lock);
+        context->active = 0;
+        pthread_mutex_unlock(&context->lock);
+
+        return -1;
+    }
+
+    return 0;
+}
+
+
+void stop_monitoring(
+    monitor_context_t *context,
+    pthread_t monitor_tid)
+{
+    pthread_mutex_lock(&context->lock);
+
+    int was_active =
+        context->active;
+
+    if (was_active)
+    {
+        context->stop_requested = 1;
+
+        pthread_cond_signal(
+            &context->cond);
+    }
+
+    pthread_mutex_unlock(&context->lock);
+
+    if (was_active)
+    {
+        pthread_join(
+            monitor_tid,
+            NULL);
+    }
 }
 
 
@@ -1085,6 +1269,21 @@ void *handle_controller(void *arg)
     char line[BUFFER_SIZE];
 
     int authenticated = 0;
+
+    monitor_context_t monitor;
+
+    memset(&monitor, 0, sizeof(monitor));
+
+    pthread_mutex_init(
+        &monitor.lock,
+        NULL);
+
+    pthread_cond_init(
+        &monitor.cond,
+        NULL);
+
+    pthread_t monitor_tid;
+
 
     while (1)
     {
@@ -1243,7 +1442,7 @@ void *handle_controller(void *arg)
 
 
         /*
-         * PUT <filename> <filesize>
+         * PUT
          */
         if (strncmp(line,
                     "PUT ",
@@ -1291,7 +1490,7 @@ void *handle_controller(void *arg)
 
 
         /*
-         * GET <filename>
+         * GET
          */
         if (strncmp(line,
                     "GET ",
@@ -1330,11 +1529,152 @@ void *handle_controller(void *arg)
 
 
         /*
+         * MONITOR START <udp_port>
+         */
+        if (strncmp(line,
+                    "MONITOR START ",
+                    14) == 0)
+        {
+            int udp_port;
+            char extra[2];
+
+            int fields =
+                sscanf(
+                    line,
+                    "MONITOR START %d %1s",
+                    &udp_port,
+                    extra);
+
+            if (fields != 1 ||
+                udp_port < 1 ||
+                udp_port > 65535)
+            {
+                if (send_response(
+                        client_fd,
+                        "ERR 008 INVALID_UDP_PORT SID:3280\n") < 0)
+                {
+                    break;
+                }
+
+                continue;
+            }
+
+            int monitor_result =
+                start_monitoring(
+                    &monitor,
+                    &monitor_tid,
+                    &client_addr,
+                    udp_port);
+
+            if (monitor_result == -2)
+            {
+                if (send_response(
+                        client_fd,
+                        "ERR 009 MONITOR_ALREADY_RUNNING SID:3280\n") < 0)
+                {
+                    break;
+                }
+
+                continue;
+            }
+
+            if (monitor_result < 0)
+            {
+                if (send_response(
+                        client_fd,
+                        "ERR 010 MONITOR_START_FAILED SID:3280\n") < 0)
+                {
+                    break;
+                }
+
+                continue;
+            }
+
+            if (send_response(
+                    client_fd,
+                    "OK MONITOR_STARTED SID:3280\n") < 0)
+            {
+                stop_monitoring(
+                    &monitor,
+                    monitor_tid);
+
+                break;
+            }
+
+            printf(
+                "[THREAD %lu] UDP monitoring started for %s:%d\n",
+                (unsigned long)pthread_self(),
+                inet_ntoa(client_addr.sin_addr),
+                udp_port);
+
+            continue;
+        }
+
+
+        /*
+         * MONITOR STOP
+         */
+        if (strcmp(line,
+                   "MONITOR STOP") == 0)
+        {
+            pthread_mutex_lock(
+                &monitor.lock);
+
+            int monitor_active =
+                monitor.active;
+
+            pthread_mutex_unlock(
+                &monitor.lock);
+
+            if (monitor_active)
+            {
+                stop_monitoring(
+                    &monitor,
+                    monitor_tid);
+            }
+
+            if (send_response(
+                    client_fd,
+                    "OK MONITOR_STOPPED SID:3280\n") < 0)
+            {
+                break;
+            }
+
+            printf(
+                "[THREAD %lu] UDP monitoring stopped.\n",
+                (unsigned long)pthread_self());
+
+            continue;
+        }
+
+
+        /*
          * QUIT
          */
         if (strcmp(line,
                    "QUIT") == 0)
         {
+            /*
+             * Assignment requirement:
+             * monitoring is stopped when the
+             * Controller quits.
+             */
+            pthread_mutex_lock(
+                &monitor.lock);
+
+            int monitor_active =
+                monitor.active;
+
+            pthread_mutex_unlock(
+                &monitor.lock);
+
+            if (monitor_active)
+            {
+                stop_monitoring(
+                    &monitor,
+                    monitor_tid);
+            }
+
             if (send_response(
                     client_fd,
                     "OK BYE SID:3280\n") < 0)
@@ -1346,9 +1686,6 @@ void *handle_controller(void *arg)
         }
 
 
-        /*
-         * Unknown authenticated command.
-         */
         if (send_response(
                 client_fd,
                 "ERR 003 UNKNOWN_COMMAND SID:3280\n") < 0)
@@ -1356,6 +1693,32 @@ void *handle_controller(void *arg)
             break;
         }
     }
+
+
+    /*
+     * Also stop monitoring if the Controller
+     * disconnects unexpectedly.
+     */
+    pthread_mutex_lock(&monitor.lock);
+
+    int monitor_active =
+        monitor.active;
+
+    pthread_mutex_unlock(&monitor.lock);
+
+    if (monitor_active)
+    {
+        stop_monitoring(
+            &monitor,
+            monitor_tid);
+    }
+
+
+    pthread_cond_destroy(
+        &monitor.cond);
+
+    pthread_mutex_destroy(
+        &monitor.lock);
 
     close(client_fd);
 
@@ -1447,6 +1810,8 @@ int main(void)
     printf("Storage Directory   : %s\n",
            STORAGE_DIR);
     printf("Concurrency Model   : POSIX threads\n");
+    printf("Monitor Interval    : %d seconds\n",
+           MONITOR_INTERVAL);
     printf("----------------------------------------\n");
     printf("Waiting for Controller connections...\n\n");
 

@@ -107,3 +107,18 @@ The Controller parses the response header before switching from line-based recep
 Filename validation is applied before accessing Agent storage. Requests for unavailable files are rejected without starting a binary transfer, allowing the authenticated TCP session to remain synchronized and continue processing commands.
 
 GET was tested using both text and binary files. SHA-256 hashes of the original, Agent-stored and downloaded copies were compared to verify byte-for-byte integrity.
+
+
+## 05 October 2026 – UDP Periodic Monitoring
+
+The secondary UDP monitoring component of RemoteOps was implemented.
+
+The Controller can start monitoring using MONITOR START with a selected UDP port. The Controller first binds a UDP socket locally and then sends the monitoring request to the Agent over the authenticated TCP connection.
+
+The Agent obtains the Controller IP address from the established TCP connection and creates a separate monitoring thread. Current CPU load, memory usage and uptime are collected and transmitted as SYSINFO UDP datagrams containing the personalised SID:3280 identifier.
+
+A five-second monitoring interval was selected to provide regular updates without producing excessive network traffic.
+
+The Controller uses a separate POSIX thread for UDP reception so that monitoring datagrams can be displayed asynchronously while normal TCP commands continue to operate.
+
+MONITOR STOP was tested to ensure UDP transmission terminates without closing the TCP session. QUIT and unexpected session termination also stop active monitoring to avoid leaving monitoring threads running.

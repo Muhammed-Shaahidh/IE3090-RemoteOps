@@ -213,3 +213,24 @@ I learned how a TCP application can transition safely between line-based control
 
 
 
+## Interaction 11
+
+**Date:** 05 October 2026
+
+**AI Tool:** ChatGPT
+
+**Stage:** UDP periodic monitoring
+
+**Prompt Summary:**
+Requested continuation of the RemoteOps implementation with the assignment-defined UDP periodic monitoring feature and complete updated Agent and Controller source files.
+
+**AI Assistance Received:**
+ChatGPT provided guidance for implementing MONITOR START and MONITOR STOP over the existing authenticated TCP channel while using a secondary UDP socket for periodic system-statistics transmission. The proposed implementation used separate POSIX threads for Agent-side monitoring and Controller-side UDP reception.
+
+**How the Output Was Used:**
+The suggested approach was reviewed and integrated into the existing RemoteOps implementation while preserving AUTH, SYSINFO, LISTPROC, EXEC, PUT, GET and QUIT functionality. UDP monitoring was tested together with normal TCP command processing and graceful monitoring termination.
+
+**What I Learned:**
+I learned how TCP and UDP can be used together within the same application. TCP provides reliable ordered command and response communication, while UDP can provide lightweight asynchronous monitoring updates. I also learned how threads allow the Controller to receive UDP datagrams without blocking its interactive TCP command loop.
+
+
