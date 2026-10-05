@@ -135,3 +135,18 @@ The Agent now records startup, Controller connections, authentication results, c
 Graceful disconnection was also tested. When QUIT is received while UDP monitoring is active, the Agent stops and joins the monitoring thread before returning the BYE response and closing the TCP connection.
 
 Unexpected Controller termination was also tested. The Agent detects the closed TCP connection, stops any associated monitoring activity and releases the session resources without terminating the main Agent.
+
+
+## 05 October 2026 – Protocol Framing and Error Handling
+
+The RemoteOps protocol framing and error-handling implementation was systematically tested.
+
+TCP control messages use newline-based framing because TCP is a byte-stream protocol and does not preserve application message boundaries. Multiple commands were transmitted through one TCP stream and were correctly processed as separate newline-terminated messages.
+
+Partial command delivery was also simulated by splitting AUTH and SYSINFO data across multiple writes with delays. The Agent successfully reconstructed each command before processing it.
+
+The difference between text-command framing and file-transfer framing was reviewed. PUT and GET use a newline-terminated header followed by an exact number of raw file bytes, allowing binary files to be transferred without interpreting file contents as protocol commands.
+
+Authentication failures, unknown commands, prohibited EXEC commands, missing files, oversized PUT requests, invalid UDP ports and oversized control lines were tested. Recoverable protocol errors did not terminate the authenticated TCP session.
+
+An oversized control line was also tested to verify that the Agent discards the remainder of the invalid line and correctly processes the next valid command.

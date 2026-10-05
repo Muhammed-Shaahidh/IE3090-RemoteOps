@@ -257,3 +257,22 @@ I learned why a multi-threaded server requires synchronization when several thre
 
 
 
+## Interaction 13
+
+**Date:** 05 October 2026
+
+**AI Tool:** ChatGPT
+
+**Stage:** Protocol framing and error-handling verification
+
+**Prompt Summary:**
+Requested continuation of the RemoteOps assignment after completing logging and graceful session cleanup.
+
+**AI Assistance Received:**
+ChatGPT provided a structured set of tests for newline-based TCP framing, partial command delivery, multiple commands within one TCP stream, authentication enforcement, unknown commands, EXEC whitelist rejection, missing files, oversized uploads, invalid UDP ports and oversized control messages.
+
+**How the Output Was Used:**
+The existing RemoteOps Agent was tested using netcat and controlled shell input to simulate several TCP stream and protocol-error conditions. The results were documented in Section 14 of the implementation report.
+
+**What I Learned:**
+I learned that TCP does not preserve application message boundaries and that an application must implement its own framing mechanism. I also learned why RemoteOps uses newline framing for control messages but exact byte-count framing for raw file transfers.
