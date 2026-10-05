@@ -234,3 +234,26 @@ The suggested approach was reviewed and integrated into the existing RemoteOps i
 I learned how TCP and UDP can be used together within the same application. TCP provides reliable ordered command and response communication, while UDP can provide lightweight asynchronous monitoring updates. I also learned how threads allow the Controller to receive UDP datagrams without blocking its interactive TCP command loop.
 
 
+
+## Interaction 12
+
+**Date:** 05 October 2026
+
+**AI Tool:** ChatGPT
+
+**Stage:** Logging and graceful disconnection
+
+**Prompt Summary:**
+Requested continuation of the RemoteOps assignment after UDP monitoring, with complete updated source code whenever implementation changes were required.
+
+**AI Assistance Received:**
+ChatGPT provided an updated Agent implementation containing timestamped persistent logging, mutex-protected concurrent log writing, authentication-token redaction, file-transfer logging, monitoring activity logging and graceful cleanup of monitoring resources during QUIT or unexpected Controller disconnection.
+
+**How the Output Was Used:**
+The logging functionality was integrated into the complete Agent implementation while retaining AUTH, SYSINFO, LISTPROC, EXEC, PUT, GET, UDP monitoring and QUIT functionality. The personalised log file was inspected after a complete RemoteOps session and graceful and unexpected disconnection scenarios were tested.
+
+**What I Learned:**
+I learned why a multi-threaded server requires synchronization when several threads write to one shared log file. I also learned how graceful connection termination should clean up associated resources, such as monitoring threads and sockets, before a client session finishes.
+
+
+

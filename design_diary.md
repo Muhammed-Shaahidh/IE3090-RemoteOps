@@ -122,3 +122,16 @@ A five-second monitoring interval was selected to provide regular updates withou
 The Controller uses a separate POSIX thread for UDP reception so that monitoring datagrams can be displayed asynchronously while normal TCP commands continue to operate.
 
 MONITOR STOP was tested to ensure UDP transmission terminates without closing the TCP session. QUIT and unexpected session termination also stop active monitoring to avoid leaving monitoring threads running.
+
+
+## 05 October 2026 – Logging and Graceful Disconnection
+
+The RemoteOps Agent was extended with persistent activity logging using the personalised filename remoteops_IT24610823.log.
+
+A reusable write_log() function was created to add timestamps to important events. A POSIX mutex protects the shared log file because multiple Controller threads may generate log entries concurrently.
+
+The Agent now records startup, Controller connections, authentication results, commands, file uploads, file downloads, UDP monitoring operations, QUIT requests and connection termination. Authentication tokens are deliberately redacted from command log entries rather than being stored in plaintext.
+
+Graceful disconnection was also tested. When QUIT is received while UDP monitoring is active, the Agent stops and joins the monitoring thread before returning the BYE response and closing the TCP connection.
+
+Unexpected Controller termination was also tested. The Agent detects the closed TCP connection, stops any associated monitoring activity and releases the session resources without terminating the main Agent.
