@@ -148,3 +148,22 @@ I learned how popen() can be used to read the output of another Linux process th
 
 
 
+## Interaction 08
+
+**Date:** 05 October 2026
+
+**AI Tool:** ChatGPT
+
+**Stage:** Restricted EXEC command implementation
+
+**Prompt Summary:**
+Requested continuation of the RemoteOps implementation after completing LISTPROC, while preserving the complete current Agent and Controller source code.
+
+**AI Assistance Received:**
+ChatGPT reviewed the assignment-defined EXEC protocol and provided guidance for implementing the fixed whitelist containing DATE, UPTIME, DISKFREE, HOSTNAME and WHOAMI. It also suggested mapping protocol names to predefined Linux commands instead of executing arbitrary Controller input, normalizing command output to preserve the line-based protocol, and testing both allowed and disallowed commands.
+
+**How the Output Was Used:**
+The proposed implementation was reviewed and integrated into the existing Agent and Controller. All five permitted commands were tested, and commands outside the whitelist were tested to confirm that they were rejected.
+
+**What I Learned:**
+I learned how a command whitelist can provide restricted remote execution without exposing an unrestricted shell. I also learned how popen() can capture command output and why multi-line operating-system output must be converted to the single-line format required by the application protocol.

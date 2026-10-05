@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <errno.h>
+#include <ctype.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -27,14 +28,23 @@ typedef struct
 
 
 /*
- * Send all bytes in the supplied buffer.
+ * ------------------------------------------------
+ * TCP HELPER FUNCTIONS
+ * ------------------------------------------------
+ */
+
+
+/*
+ * Send all bytes in a buffer.
  */
 ssize_t send_all(int socket_fd,
                  const void *buffer,
                  size_t length)
 {
     size_t total_sent = 0;
-    const char *data = (const char *)buffer;
+
+    const char *data =
+        (const char *)buffer;
 
     while (total_sent < length)
     {
@@ -59,7 +69,8 @@ ssize_t send_all(int socket_fd,
             return -1;
         }
 
-        total_sent += (size_t)sent;
+        total_sent +=
+            (size_t)sent;
     }
 
     return (ssize_t)total_sent;
@@ -71,10 +82,11 @@ ssize_t send_all(int socket_fd,
  * protocol line.
  *
  * Return values:
- *   > 0 : number of characters received
+ *
+ *   > 0 : characters received
  *     0 : peer disconnected
  *    -1 : socket error
- *    -2 : line exceeded buffer capacity
+ *    -2 : line too long
  */
 ssize_t recv_line(int socket_fd,
                   char *buffer,
@@ -122,7 +134,7 @@ ssize_t recv_line(int socket_fd,
             buffer[position] = '\0';
 
             /*
-             * Support both LF and CRLF.
+             * Support CRLF.
              */
             if (position > 0 &&
                 buffer[position - 1] == '\r')
@@ -134,13 +146,16 @@ ssize_t recv_line(int socket_fd,
             return (ssize_t)position;
         }
 
-        buffer[position++] = character;
+        buffer[position++] =
+            character;
     }
 
     buffer[position] = '\0';
 
+
     /*
-     * Consume the remainder of an oversized line.
+     * Consume the remainder of an oversized
+     * protocol line.
      */
     if (position == buffer_size - 1)
     {
@@ -189,6 +204,7 @@ int send_response(int client_fd,
                  strlen(response)) < 0)
     {
         perror("send");
+
         return -1;
     }
 
@@ -198,13 +214,14 @@ int send_response(int client_fd,
 
 /*
  * ------------------------------------------------
- * SYSINFO SUPPORT FUNCTIONS
+ * SYSINFO FUNCTIONS
  * ------------------------------------------------
  */
 
 
 /*
- * Read the one-minute load average.
+ * Read one-minute load average from
+ * /proc/loadavg.
  */
 int get_cpu_load(double *cpu_load)
 {
@@ -214,6 +231,7 @@ int get_cpu_load(double *cpu_load)
     if (file == NULL)
     {
         perror("fopen /proc/loadavg");
+
         return -1;
     }
 
@@ -222,6 +240,7 @@ int get_cpu_load(double *cpu_load)
                cpu_load) != 1)
     {
         fclose(file);
+
         return -1;
     }
 
@@ -232,7 +251,7 @@ int get_cpu_load(double *cpu_load)
 
 
 /*
- * Calculate currently used memory in MB.
+ * Calculate currently used memory.
  *
  * Used memory =
  * MemTotal - MemAvailable
@@ -245,6 +264,7 @@ int get_memory_used_mb(long *memory_used_mb)
     if (file == NULL)
     {
         perror("fopen /proc/meminfo");
+
         return -1;
     }
 
@@ -287,14 +307,15 @@ int get_memory_used_mb(long *memory_used_mb)
     }
 
     *memory_used_mb =
-        (mem_total_kb - mem_available_kb) / 1024;
+        (mem_total_kb -
+         mem_available_kb) / 1024;
 
     return 0;
 }
 
 
 /*
- * Read system uptime in seconds.
+ * Read system uptime from /proc/uptime.
  */
 int get_uptime_seconds(long *uptime_seconds)
 {
@@ -304,6 +325,7 @@ int get_uptime_seconds(long *uptime_seconds)
     if (file == NULL)
     {
         perror("fopen /proc/uptime");
+
         return -1;
     }
 
@@ -314,6 +336,7 @@ int get_uptime_seconds(long *uptime_seconds)
                &uptime) != 1)
     {
         fclose(file);
+
         return -1;
     }
 
@@ -328,15 +351,11 @@ int get_uptime_seconds(long *uptime_seconds)
 
 /*
  * Handle SYSINFO.
- *
- * Protocol:
- *
- * OK SYSINFO <cpu_load> <mem_used_mb>
- * <uptime_sec> SID:3280
  */
 int handle_sysinfo(int client_fd)
 {
     double cpu_load;
+
     long memory_used_mb;
     long uptime_seconds;
 
@@ -368,28 +387,26 @@ int handle_sysinfo(int client_fd)
             "ERR 006 SYSINFO_FAILED SID:3280\n");
     }
 
-    return send_response(client_fd,
-                         response);
+    return send_response(
+        client_fd,
+        response);
 }
 
 
 /*
  * ------------------------------------------------
- * LISTPROC SUPPORT
+ * LISTPROC
  * ------------------------------------------------
  */
 
 
 /*
- * Handle LISTPROC.
+ * Obtain a process snapshot using ps.
  *
- * Assignment protocol:
+ * Protocol:
  *
  * OK PROCS <comma-separated process names/PIDs>
  * SID:3280
- *
- * A process snapshot is obtained using ps through
- * popen().
  */
 int handle_listproc(int client_fd)
 {
@@ -408,9 +425,10 @@ int handle_listproc(int client_fd)
     char response[BUFFER_SIZE];
 
     int written =
-        snprintf(response,
-                 sizeof(response),
-                 "OK PROCS ");
+        snprintf(
+            response,
+            sizeof(response),
+            "OK PROCS ");
 
     if (written < 0 ||
         (size_t)written >= sizeof(response))
@@ -437,11 +455,6 @@ int handle_listproc(int client_fd)
 
         char process_name[128];
 
-        /*
-         * ps output contains:
-         *
-         * PID PROCESS_NAME
-         */
         if (sscanf(line,
                    "%d %127s",
                    &pid,
@@ -469,26 +482,23 @@ int handle_listproc(int client_fd)
         }
 
         /*
-         * Reserve enough space for:
-         *
-         * " SID:3280\n"
-         *
-         * plus the terminating null character.
+         * Keep enough room for SID and newline.
          */
-        size_t remaining_required =
+        size_t required =
             (size_t)entry_length +
             strlen(" SID:3280\n") +
             1;
 
-        if (used + remaining_required >
+        if (used + required >
             sizeof(response))
         {
             break;
         }
 
-        memcpy(response + used,
-               process_entry,
-               (size_t)entry_length);
+        memcpy(
+            response + used,
+            process_entry,
+            (size_t)entry_length);
 
         used +=
             (size_t)entry_length;
@@ -503,13 +513,11 @@ int handle_listproc(int client_fd)
         perror("pclose");
     }
 
-    /*
-     * Append the mandatory personalised SID.
-     */
     int final_length =
-        snprintf(response + used,
-                 sizeof(response) - used,
-                 " SID:3280\n");
+        snprintf(
+            response + used,
+            sizeof(response) - used,
+            " SID:3280\n");
 
     if (final_length < 0 ||
         (size_t)final_length >=
@@ -520,8 +528,236 @@ int handle_listproc(int client_fd)
             "ERR 006 PROCESS_LIST_FAILED SID:3280\n");
     }
 
-    return send_response(client_fd,
-                         response);
+    return send_response(
+        client_fd,
+        response);
+}
+
+
+/*
+ * ------------------------------------------------
+ * EXEC
+ * ------------------------------------------------
+ */
+
+
+/*
+ * Convert command output into one protocol line.
+ *
+ * The RemoteOps protocol requires each text
+ * response to be exactly one newline-terminated
+ * line.
+ *
+ * Newlines, tabs and repeated whitespace are
+ * therefore converted into single spaces.
+ */
+void normalize_command_output(char *output)
+{
+    size_t read_position = 0;
+    size_t write_position = 0;
+
+    int previous_was_space = 1;
+
+    while (output[read_position] != '\0')
+    {
+        unsigned char character =
+            (unsigned char)output[read_position];
+
+        if (isspace(character))
+        {
+            if (!previous_was_space)
+            {
+                output[write_position++] = ' ';
+
+                previous_was_space = 1;
+            }
+        }
+        else
+        {
+            output[write_position++] =
+                (char)character;
+
+            previous_was_space = 0;
+        }
+
+        read_position++;
+    }
+
+    /*
+     * Remove final whitespace.
+     */
+    if (write_position > 0 &&
+        output[write_position - 1] == ' ')
+    {
+        write_position--;
+    }
+
+    output[write_position] = '\0';
+}
+
+
+/*
+ * Handle the assignment-defined EXEC command.
+ *
+ * Only these names are allowed:
+ *
+ * DATE
+ * UPTIME
+ * DISKFREE
+ * HOSTNAME
+ * WHOAMI
+ *
+ * No arbitrary user-provided shell command is
+ * executed.
+ */
+int handle_exec(int client_fd,
+                const char *command_name)
+{
+    const char *linux_command = NULL;
+
+
+    /*
+     * Fixed whitelist.
+     */
+    if (strcmp(command_name,
+               "DATE") == 0)
+    {
+        linux_command =
+            "date";
+    }
+    else if (strcmp(command_name,
+                    "UPTIME") == 0)
+    {
+        linux_command =
+            "uptime";
+    }
+    else if (strcmp(command_name,
+                    "DISKFREE") == 0)
+    {
+        /*
+         * Report disk usage for the root
+         * filesystem in human-readable form.
+         */
+        linux_command =
+            "df -h /";
+    }
+    else if (strcmp(command_name,
+                    "HOSTNAME") == 0)
+    {
+        linux_command =
+            "hostname";
+    }
+    else if (strcmp(command_name,
+                    "WHOAMI") == 0)
+    {
+        linux_command =
+            "whoami";
+    }
+    else
+    {
+        /*
+         * Required assignment error response.
+         */
+        return send_response(
+            client_fd,
+            "ERR 002 COMMAND_NOT_ALLOWED SID:3280\n");
+    }
+
+
+    /*
+     * Execute only the fixed command selected
+     * above.
+     */
+    FILE *command_pipe =
+        popen(linux_command, "r");
+
+    if (command_pipe == NULL)
+    {
+        perror("popen");
+
+        return send_response(
+            client_fd,
+            "ERR 006 EXEC_FAILED SID:3280\n");
+    }
+
+
+    char output[BUFFER_SIZE];
+
+    size_t used = 0;
+
+    output[0] = '\0';
+
+
+    /*
+     * Read command output.
+     */
+    while (used < sizeof(output) - 1)
+    {
+        size_t available =
+            sizeof(output) - used;
+
+        if (fgets(output + used,
+                  (int)available,
+                  command_pipe) == NULL)
+        {
+            break;
+        }
+
+        used =
+            strlen(output);
+    }
+
+
+    int close_status =
+        pclose(command_pipe);
+
+    if (close_status == -1)
+    {
+        perror("pclose");
+
+        return send_response(
+            client_fd,
+            "ERR 006 EXEC_FAILED SID:3280\n");
+    }
+
+
+    /*
+     * Preserve the one-line framing rule.
+     */
+    normalize_command_output(output);
+
+
+    /*
+     * Ensure there is some meaningful output.
+     */
+    if (strlen(output) == 0)
+    {
+        strcpy(output,
+               "NO_OUTPUT");
+    }
+
+
+    char response[BUFFER_SIZE];
+
+    int written =
+        snprintf(
+            response,
+            sizeof(response),
+            "OK EXEC_RESULT %s SID:3280\n",
+            output);
+
+    if (written < 0 ||
+        (size_t)written >= sizeof(response))
+    {
+        return send_response(
+            client_fd,
+            "ERR 006 EXEC_FAILED SID:3280\n");
+    }
+
+
+    return send_response(
+        client_fd,
+        response);
 }
 
 
@@ -543,27 +779,35 @@ void *handle_controller(void *arg)
 
     free(client_info);
 
+
     printf(
         "[THREAD %lu] Controller connected from %s:%d\n",
         (unsigned long)pthread_self(),
         inet_ntoa(client_addr.sin_addr),
         ntohs(client_addr.sin_port));
 
+
     char line[BUFFER_SIZE];
 
     /*
-     * Each Controller session has its own
-     * authentication state.
+     * Authentication state belongs to this
+     * individual Controller session.
      */
     int authenticated = 0;
+
 
     while (1)
     {
         ssize_t result =
-            recv_line(client_fd,
-                      line,
-                      sizeof(line));
+            recv_line(
+                client_fd,
+                line,
+                sizeof(line));
 
+
+        /*
+         * Controller disconnected.
+         */
         if (result == 0)
         {
             printf(
@@ -573,12 +817,21 @@ void *handle_controller(void *arg)
             break;
         }
 
+
+        /*
+         * Socket error.
+         */
         if (result == -1)
         {
             perror("recv");
+
             break;
         }
 
+
+        /*
+         * Oversized command.
+         */
         if (result == -2)
         {
             if (send_response(
@@ -590,6 +843,7 @@ void *handle_controller(void *arg)
 
             continue;
         }
+
 
         printf(
             "[THREAD %lu] Received command: %s\n",
@@ -611,6 +865,7 @@ void *handle_controller(void *arg)
                 const char *token =
                     line + 5;
 
+
                 if (strcmp(token,
                            AUTH_TOKEN) == 0)
                 {
@@ -622,6 +877,7 @@ void *handle_controller(void *arg)
                     }
 
                     authenticated = 1;
+
 
                     printf(
                         "[THREAD %lu] Authentication successful.\n",
@@ -635,6 +891,7 @@ void *handle_controller(void *arg)
                     {
                         break;
                     }
+
 
                     printf(
                         "[THREAD %lu] Authentication failed.\n",
@@ -650,10 +907,12 @@ void *handle_controller(void *arg)
                     break;
                 }
 
+
                 printf(
                     "[THREAD %lu] Command rejected before authentication.\n",
                     (unsigned long)pthread_self());
             }
+
 
             continue;
         }
@@ -667,14 +926,17 @@ void *handle_controller(void *arg)
         if (strcmp(line,
                    "SYSINFO") == 0)
         {
-            if (handle_sysinfo(client_fd) < 0)
+            if (handle_sysinfo(
+                    client_fd) < 0)
             {
                 break;
             }
 
+
             printf(
                 "[THREAD %lu] SYSINFO response sent.\n",
                 (unsigned long)pthread_self());
+
 
             continue;
         }
@@ -688,14 +950,70 @@ void *handle_controller(void *arg)
         if (strcmp(line,
                    "LISTPROC") == 0)
         {
-            if (handle_listproc(client_fd) < 0)
+            if (handle_listproc(
+                    client_fd) < 0)
             {
                 break;
             }
 
+
             printf(
                 "[THREAD %lu] LISTPROC response sent.\n",
                 (unsigned long)pthread_self());
+
+
+            continue;
+        }
+
+
+        /*
+         * ------------------------------------------------
+         * EXEC
+         * ------------------------------------------------
+         *
+         * EXEC must contain a command name after
+         * "EXEC ".
+         */
+        if (strncmp(line,
+                    "EXEC ",
+                    5) == 0)
+        {
+            const char *command_name =
+                line + 5;
+
+
+            if (handle_exec(
+                    client_fd,
+                    command_name) < 0)
+            {
+                break;
+            }
+
+
+            printf(
+                "[THREAD %lu] EXEC request processed: %s\n",
+                (unsigned long)pthread_self(),
+                command_name);
+
+
+            continue;
+        }
+
+
+        /*
+         * EXEC without a command name is also
+         * rejected.
+         */
+        if (strcmp(line,
+                   "EXEC") == 0)
+        {
+            if (send_response(
+                    client_fd,
+                    "ERR 002 COMMAND_NOT_ALLOWED SID:3280\n") < 0)
+            {
+                break;
+            }
+
 
             continue;
         }
@@ -716,9 +1034,11 @@ void *handle_controller(void *arg)
                 break;
             }
 
+
             printf(
                 "[THREAD %lu] Controller requested QUIT.\n",
                 (unsigned long)pthread_self());
+
 
             break;
         }
@@ -735,11 +1055,14 @@ void *handle_controller(void *arg)
         }
     }
 
+
     close(client_fd);
+
 
     printf(
         "[THREAD %lu] Controller session closed.\n",
         (unsigned long)pthread_self());
+
 
     return NULL;
 }
@@ -756,76 +1079,92 @@ int main(void)
 
     struct sockaddr_in server_addr;
 
+
     /*
      * Create IPv4 TCP listening socket.
      */
     server_fd =
-        socket(AF_INET,
-               SOCK_STREAM,
-               0);
+        socket(
+            AF_INET,
+            SOCK_STREAM,
+            0);
+
 
     if (server_fd < 0)
     {
         perror("socket");
+
         return EXIT_FAILURE;
     }
 
 
     /*
-     * Allow address reuse during testing.
+     * Allow address reuse during development.
      */
     int reuse = 1;
 
-    if (setsockopt(server_fd,
-                   SOL_SOCKET,
-                   SO_REUSEADDR,
-                   &reuse,
-                   sizeof(reuse)) < 0)
+
+    if (setsockopt(
+            server_fd,
+            SOL_SOCKET,
+            SO_REUSEADDR,
+            &reuse,
+            sizeof(reuse)) < 0)
     {
         perror("setsockopt");
 
         close(server_fd);
+
         return EXIT_FAILURE;
     }
 
 
-    memset(&server_addr,
-           0,
-           sizeof(server_addr));
+    memset(
+        &server_addr,
+        0,
+        sizeof(server_addr));
+
 
     server_addr.sin_family =
         AF_INET;
 
+
     server_addr.sin_addr.s_addr =
         htonl(INADDR_ANY);
+
 
     server_addr.sin_port =
         htons(AGENT_PORT);
 
 
     /*
-     * Bind to personalised port 9461.
+     * Bind Agent to personalised port 9461.
      */
-    if (bind(server_fd,
-             (struct sockaddr *)&server_addr,
-             sizeof(server_addr)) < 0)
+    if (bind(
+            server_fd,
+            (struct sockaddr *)&server_addr,
+            sizeof(server_addr)) < 0)
     {
         perror("bind");
 
         close(server_fd);
+
         return EXIT_FAILURE;
     }
 
 
     /*
-     * Listen for Controller connections.
+     * Listen for incoming Controller
+     * connections.
      */
-    if (listen(server_fd,
-               10) < 0)
+    if (listen(
+            server_fd,
+            10) < 0)
     {
         perror("listen");
 
         close(server_fd);
+
         return EXIT_FAILURE;
     }
 
@@ -844,42 +1183,50 @@ int main(void)
 
 
     /*
-     * Main Agent connection acceptance loop.
+     * Main Agent accept loop.
      */
     while (1)
     {
         client_info_t *client_info =
             malloc(sizeof(client_info_t));
 
+
         if (client_info == NULL)
         {
             perror("malloc");
+
             continue;
         }
+
 
         socklen_t client_addr_len =
             sizeof(client_info->client_addr);
 
+
         client_info->client_fd =
             accept(
                 server_fd,
-                (struct sockaddr *)&client_info->client_addr,
+                (struct sockaddr *)
+                    &client_info->client_addr,
                 &client_addr_len);
+
 
         if (client_info->client_fd < 0)
         {
             perror("accept");
 
             free(client_info);
+
             continue;
         }
 
 
         pthread_t thread_id;
 
+
         /*
-         * Create one worker thread for this
-         * Controller connection.
+         * Create one independent worker thread
+         * for the new Controller.
          */
         int result =
             pthread_create(
@@ -888,6 +1235,7 @@ int main(void)
                 handle_controller,
                 client_info);
 
+
         if (result != 0)
         {
             fprintf(
@@ -895,21 +1243,28 @@ int main(void)
                 "pthread_create failed: %s\n",
                 strerror(result));
 
-            close(client_info->client_fd);
+
+            close(
+                client_info->client_fd);
+
+
             free(client_info);
+
 
             continue;
         }
 
 
         /*
-         * Worker cleans up automatically when done.
+         * Worker resources are automatically
+         * released when the thread terminates.
          */
         pthread_detach(thread_id);
     }
 
 
     close(server_fd);
+
 
     return EXIT_SUCCESS;
 }

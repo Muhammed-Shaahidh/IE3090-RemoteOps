@@ -70,3 +70,16 @@ Process information is read from the pipe, parsed into process identifiers and c
 LISTPROC was tested repeatedly within an authenticated persistent TCP session. The returned process information was compared with direct output from the Linux ps command to verify the implementation.
 
 The existing AUTH, SYSINFO and QUIT functionality was also retained and checked to ensure that the new command did not break previously implemented protocol features.
+
+
+## 05 October 2026 – Restricted EXEC Command
+
+The RemoteOps Agent was extended with the EXEC command. The assignment-defined whitelist was implemented using the five permitted command names: DATE, UPTIME, DISKFREE, HOSTNAME and WHOAMI.
+
+Instead of directly executing command text supplied by the Controller, each permitted protocol name is mapped internally to a predefined Linux command. This prevents EXEC from providing unrestricted shell access.
+
+Command output is obtained using popen(). Because the RemoteOps control protocol requires text responses to remain on a single newline-terminated line, embedded whitespace and newlines in command output are normalized before constructing the OK EXEC_RESULT response.
+
+All five permitted commands were tested successfully. Non-whitelisted commands such as EXEC LS and EXEC RM were also tested and correctly rejected with ERR 002 COMMAND_NOT_ALLOWED SID:3280.
+
+
