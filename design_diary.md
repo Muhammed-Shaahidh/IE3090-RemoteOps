@@ -165,3 +165,16 @@ Concurrency was tested using five simultaneous Controller connections. Each Cont
 Protocol error cases and unexpected Controller termination were also retested. An individual Controller could disconnect without terminating the Agent, and a new Controller was able to connect afterwards.
 
 The final activity log was inspected to verify that connections, commands, file transfers, monitoring and session termination were recorded correctly.
+
+
+## 05 October 2026 – Final Documentation Review
+
+After completing the implementation and final integration testing, the RemoteOps documentation was reviewed and finalized.
+
+The main design decisions were documented, including the use of TCP for reliable command communication, UDP for periodic monitoring, POSIX threads for concurrent Controller sessions, newline-based protocol framing, exact-byte file transfer, restricted command execution, personalised storage and thread-safe activity logging.
+
+The final implementation results and testing evidence were reviewed to ensure that the report accurately represents the implemented system.
+
+The README was updated with build instructions, execution steps, supported commands, personalisation details, storage information, logging behaviour, concurrency and protocol framing.
+
+A final reflection was also prepared to summarize the technical knowledge gained during the assignment, including TCP stream behaviour, UDP communication, POSIX threads, synchronization, file transfer and protocol error handling.

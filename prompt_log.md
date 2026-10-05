@@ -298,3 +298,25 @@ The test procedure was followed against the completed Agent and Controller imple
 
 **What I Learned:**
 I learned how integration testing differs from testing individual functions. I also learned how to verify a concurrent TCP server by maintaining several simultaneous client sessions and confirming that each session is processed independently.
+
+
+
+## Interaction 15
+
+**Date:** 05 October 2026
+
+**AI Tool:** ChatGPT
+
+**Stage:** Final documentation and reflection
+
+**Prompt Summary:**
+Requested continuation of the RemoteOps assignment after completing final integration and concurrency testing.
+
+**AI Assistance Received:**
+ChatGPT assisted with structuring the final design decisions, assumptions, conclusion, README and reflection based on the completed RemoteOps implementation.
+
+**How the Output Was Used:**
+The documentation was reviewed against the implemented system and incorporated into the final report and supporting assignment files.
+
+**What I Learned:**
+I learned how to explain implementation decisions and assumptions clearly rather than only presenting source code. I also reviewed the relationship between TCP reliability, UDP monitoring, concurrency, protocol framing, file-transfer integrity and error handling.

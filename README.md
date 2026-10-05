@@ -1,51 +1,71 @@
-# IE3090 Network Programming Assignment
+# RemoteOps
 
-## RemoteOps – Remote System Monitoring and Management Tool
+## IE3090 Network Programming Assignment
 
-**Registration Number:** IT24610823
+**Student Registration Number:** IT24610823
 
-## Personalisation Details
+RemoteOps is a TCP/IP-based remote system monitoring and management tool implemented in C using BSD sockets.
+
+The system consists of:
+
+- **Agent** – runs on the managed Linux machine.
+- **Controller** – connects to the Agent and performs authenticated RemoteOps operations.
+
+---
+
+## Personalisation
 
 | Item | Value |
 |---|---|
 | Registration Number | IT24610823 |
-| Agent Listening Port | 9461 |
-| Agent Source File | agent_823.c |
-| Controller Source File | controller_823.c |
-| Makefile | Makefile_823 |
-| Session ID | SID:3280 |
+| Agent TCP Port | 9461 |
 | Authentication Token | OPS-0823 |
+| Session ID | SID:3280 |
+| Agent Source | agent_823.c |
+| Controller Source | controller_823.c |
+| Makefile | Makefile_823 |
+| Storage Directory | ./agentfiles/IT24610823/ |
 | Log File | remoteops_IT24610823.log |
-| Storage Path | ./agentfiles/IT24610823/ |
-| Submission Archive | IE3090_IT24610823.zip |
 
-## Project Overview
+---
 
-RemoteOps is a client/server remote system monitoring and management application implemented in C using the standard BSD sockets API.
+## Implemented Features
 
-The system consists of:
+RemoteOps supports:
 
-- Agent – TCP server running on the managed machine.
-- Controller – TCP client used by the administrator.
-- TCP control channel – used for authentication, system information, process listing, command execution and file transfer.
-- UDP monitoring channel – used to periodically transmit system statistics from the Agent to the Controller.
-
-## Supported Commands
-
-- AUTH
+- TCP Agent/Controller communication
+- Authentication
 - SYSINFO
 - LISTPROC
-- EXEC
-- PUT
-- GET
-- MONITOR START
-- MONITOR STOP
-- QUIT
+- Restricted EXEC
+- PUT file upload
+- GET file download
+- UDP periodic monitoring
+- Multiple simultaneous Controllers
+- Timestamped activity logging
+- Protocol framing
+- Error handling
+- Graceful disconnection
 
-## Build Instructions
+---
 
-Build instructions will be updated as implementation progresses.
+## Supported EXEC Commands
 
-## Run Instructions
+Only the following commands are permitted:
 
-Run instructions will be updated as implementation progresses.
+- DATE
+- UPTIME
+- DISKFREE
+- HOSTNAME
+- WHOAMI
+
+Other EXEC commands are rejected.
+
+---
+
+## Build
+
+Compile the Agent and Controller using:
+
+```bash
+make -f Makefile_823
