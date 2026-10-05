@@ -83,3 +83,14 @@ Command output is obtained using popen(). Because the RemoteOps control protocol
 All five permitted commands were tested successfully. Non-whitelisted commands such as EXEC LS and EXEC RM were also tested and correctly rejected with ERR 002 COMMAND_NOT_ALLOWED SID:3280.
 
 
+## 05 October 2026 – PUT File Upload
+
+The RemoteOps PUT command was implemented to support authenticated file uploads from the Controller to the Agent.
+
+Unlike the existing line-based commands, PUT requires two protocol phases. The Controller first sends the newline-terminated PUT header containing the filename and file size and then immediately transmits exactly the declared number of raw file bytes.
+
+The Agent validates the filename and stores uploaded files under the personalised directory ./agentfiles/IT24610823/. File data is received using byte-count-based loops rather than newline framing because binary files may contain arbitrary byte values.
+
+A maximum upload size of 10 MB was selected for this implementation. Oversized files are rejected using the assignment-defined FILE_TOO_LARGE error.
+
+The implementation was tested using both a text file and a binary file. SHA-256 hashes were compared before and after transfer to verify byte-for-byte file integrity.

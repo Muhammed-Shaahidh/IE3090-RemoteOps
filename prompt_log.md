@@ -167,3 +167,27 @@ The proposed implementation was reviewed and integrated into the existing Agent 
 
 **What I Learned:**
 I learned how a command whitelist can provide restricted remote execution without exposing an unrestricted shell. I also learned how popen() can capture command output and why multi-line operating-system output must be converted to the single-line format required by the application protocol.
+
+
+## Interaction 09
+
+**Date:** 05 October 2026
+
+**AI Tool:** ChatGPT
+
+**Stage:** PUT file upload
+
+**Prompt Summary:**
+Requested continuation of the RemoteOps assignment with the PUT file-upload stage and complete updated Agent and Controller source files.
+
+**AI Assistance Received:**
+ChatGPT reviewed the assignment-defined PUT protocol and provided guidance for combining a newline-terminated PUT header with an exact raw-byte transfer. It suggested separate byte-count-based receive logic for file data, binary-mode file handling, personalised storage, filename validation, upload-size checking, and SHA-256 integrity testing.
+
+**How the Output Was Used:**
+The suggested implementation was reviewed and integrated into the existing Agent and Controller while preserving AUTH, SYSINFO, LISTPROC, EXEC and QUIT functionality. Text and binary files were uploaded and their stored copies were verified using SHA-256 hashes.
+
+**What I Learned:**
+I learned that TCP transfers a continuous byte stream and does not preserve file or message boundaries. Therefore, a file-transfer protocol must explicitly track the expected number of bytes and continue calling send() and recv() until the complete file has been transferred.
+
+
+
