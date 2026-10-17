@@ -1,0 +1,254 @@
+[2026-10-05 21:46:15] AGENT started: port=9461 SID:3280 storage=./agentfiles/IT24610823
+[2026-10-05 21:47:14] CONNECTION opened: client=127.0.0.1:56296 thread=140660779296448
+[2026-10-05 21:47:14] COMMAND received: client=127.0.0.1:56296 command=AUTH [REDACTED]
+[2026-10-05 21:47:14] AUTH success: client=127.0.0.1:56296 SID:3280
+[2026-10-05 21:47:26] COMMAND received: client=127.0.0.1:56296 command=SYSINFO
+[2026-10-05 21:47:32] COMMAND received: client=127.0.0.1:56296 command=LISTPROC
+[2026-10-05 21:47:39] COMMAND received: client=127.0.0.1:56296 command=EXEC DATE
+[2026-10-05 21:47:48] COMMAND received: client=127.0.0.1:56296 command=EXEC WHOAMI
+[2026-10-05 21:48:03] COMMAND received: client=127.0.0.1:56296 command=PUT upload_test.txt 42
+[2026-10-05 21:48:03] FILE_UPLOAD completed: file=upload_test.txt size=42 path=./agentfiles/IT24610823/upload_test.txt
+[2026-10-05 21:48:18] COMMAND received: client=127.0.0.1:56296 command=MONITOR START 12000
+[2026-10-05 21:48:18] MONITOR started: client=127.0.0.1:56296 udp_port=12000 interval=5_seconds
+[2026-10-05 21:48:29] COMMAND received: client=127.0.0.1:56296 command=MONITOR STOP
+[2026-10-05 21:48:29] MONITOR stopped: client=127.0.0.1:56296
+[2026-10-05 21:48:36] COMMAND received: client=127.0.0.1:56296 command=QUIT
+[2026-10-05 21:48:36] QUIT completed: client=127.0.0.1:56296 SID:3280
+[2026-10-05 21:48:36] CONNECTION closed: client=127.0.0.1:56296 thread=140660779296448
+[2026-10-05 21:56:12] AGENT started: port=9461 SID:3280 storage=./agentfiles/IT24610823
+[2026-10-05 21:56:16] CONNECTION opened: client=127.0.0.1:52798 thread=140351431419584
+[2026-10-05 21:56:16] COMMAND received: client=127.0.0.1:52798 command=AUTH [REDACTED]
+[2026-10-05 21:56:16] AUTH success: client=127.0.0.1:52798 SID:3280
+[2026-10-05 21:56:29] COMMAND received: client=127.0.0.1:52798 command=MONITOR START 12000
+[2026-10-05 21:56:29] MONITOR started: client=127.0.0.1:52798 udp_port=12000 interval=5_seconds
+[2026-10-05 21:56:36] COMMAND received: client=127.0.0.1:52798 command=QUIT
+[2026-10-05 21:56:36] MONITOR stopped automatically during QUIT: client=127.0.0.1:52798
+[2026-10-05 21:56:36] QUIT completed: client=127.0.0.1:52798 SID:3280
+[2026-10-05 21:56:36] CONNECTION closed: client=127.0.0.1:52798 thread=140351431419584
+[2026-10-05 21:58:43] CONNECTION opened: client=127.0.0.1:46362 thread=140351431419584
+[2026-10-05 21:58:43] COMMAND received: client=127.0.0.1:46362 command=AUTH [REDACTED]
+[2026-10-05 21:58:43] AUTH success: client=127.0.0.1:46362 SID:3280
+[2026-10-05 21:58:52] COMMAND received: client=127.0.0.1:46362 command=MONITOR START 12000
+[2026-10-05 21:58:52] MONITOR started: client=127.0.0.1:46362 udp_port=12000 interval=5_seconds
+[2026-10-05 21:58:58] DISCONNECTION unexpected/client_closed: client=127.0.0.1:46362
+[2026-10-05 21:58:58] MONITOR stopped automatically after disconnection: client=127.0.0.1:46362
+[2026-10-05 21:58:58] CONNECTION closed: client=127.0.0.1:46362 thread=140351431419584
+[2026-10-05 21:59:47] CONNECTION opened: client=127.0.0.1:57708 thread=140351431419584
+[2026-10-05 21:59:47] COMMAND received: client=127.0.0.1:57708 command=AUTH [REDACTED]
+[2026-10-05 21:59:47] AUTH success: client=127.0.0.1:57708 SID:3280
+[2026-10-05 22:00:01] DISCONNECTION unexpected/client_closed: client=127.0.0.1:57708
+[2026-10-05 22:00:01] CONNECTION closed: client=127.0.0.1:57708 thread=140351431419584
+[2026-10-05 22:10:40] AGENT started: port=9461 SID:3280 storage=./agentfiles/IT24610823
+[2026-10-05 22:10:54] CONNECTION opened: client=127.0.0.1:45868 thread=139811671299776
+[2026-10-05 22:10:54] COMMAND received: client=127.0.0.1:45868 command=SYSINFO
+[2026-10-05 22:10:54] AUTH required: client=127.0.0.1:45868
+[2026-10-05 22:10:54] DISCONNECTION unexpected/client_closed: client=127.0.0.1:45868
+[2026-10-05 22:10:54] CONNECTION closed: client=127.0.0.1:45868 thread=139811671299776
+[2026-10-05 22:12:56] CONNECTION opened: client=127.0.0.1:46382 thread=139811671299776
+[2026-10-05 22:12:56] COMMAND received: client=127.0.0.1:46382 command=AUTH [REDACTED]
+[2026-10-05 22:12:56] AUTH failed: client=127.0.0.1:46382
+[2026-10-05 22:12:56] DISCONNECTION unexpected/client_closed: client=127.0.0.1:46382
+[2026-10-05 22:12:56] CONNECTION closed: client=127.0.0.1:46382 thread=139811671299776
+[2026-10-05 22:13:29] CONNECTION opened: client=127.0.0.1:44404 thread=139811671299776
+[2026-10-05 22:13:29] COMMAND received: client=127.0.0.1:44404 command=AUTH [REDACTED]
+[2026-10-05 22:13:29] AUTH success: client=127.0.0.1:44404 SID:3280
+[2026-10-05 22:13:29] COMMAND received: client=127.0.0.1:44404 command=SYSINFO
+[2026-10-05 22:13:29] COMMAND received: client=127.0.0.1:44404 command=EXEC WHOAMI
+[2026-10-05 22:13:29] COMMAND received: client=127.0.0.1:44404 command=QUIT
+[2026-10-05 22:13:29] QUIT completed: client=127.0.0.1:44404 SID:3280
+[2026-10-05 22:13:29] CONNECTION closed: client=127.0.0.1:44404 thread=139811671299776
+[2026-10-05 22:14:44] CONNECTION opened: client=127.0.0.1:48570 thread=139811671299776
+[2026-10-05 22:14:45] COMMAND received: client=127.0.0.1:48570 command=AUTH [REDACTED]
+[2026-10-05 22:14:45] AUTH success: client=127.0.0.1:48570 SID:3280
+[2026-10-05 22:14:46] COMMAND received: client=127.0.0.1:48570 command=SYSINFO
+[2026-10-05 22:14:46] COMMAND received: client=127.0.0.1:48570 command=QUIT
+[2026-10-05 22:14:46] QUIT completed: client=127.0.0.1:48570 SID:3280
+[2026-10-05 22:14:46] CONNECTION closed: client=127.0.0.1:48570 thread=139811671299776
+[2026-10-05 22:15:45] CONNECTION opened: client=127.0.0.1:37368 thread=139811671299776
+[2026-10-05 22:15:45] COMMAND received: client=127.0.0.1:37368 command=AUTH [REDACTED]
+[2026-10-05 22:15:45] AUTH success: client=127.0.0.1:37368 SID:3280
+[2026-10-05 22:15:45] COMMAND received: client=127.0.0.1:37368 command=HELLO
+[2026-10-05 22:15:45] COMMAND rejected: client=127.0.0.1:37368 command=HELLO reason=UNKNOWN_COMMAND
+[2026-10-05 22:15:45] COMMAND received: client=127.0.0.1:37368 command=QUIT
+[2026-10-05 22:15:45] QUIT completed: client=127.0.0.1:37368 SID:3280
+[2026-10-05 22:15:45] CONNECTION closed: client=127.0.0.1:37368 thread=139811671299776
+[2026-10-05 22:16:49] CONNECTION opened: client=127.0.0.1:38640 thread=139811671299776
+[2026-10-05 22:16:49] COMMAND received: client=127.0.0.1:38640 command=AUTH [REDACTED]
+[2026-10-05 22:16:49] AUTH success: client=127.0.0.1:38640 SID:3280
+[2026-10-05 22:16:49] COMMAND received: client=127.0.0.1:38640 command=EXEC LS
+[2026-10-05 22:16:49] COMMAND received: client=127.0.0.1:38640 command=EXEC DATE
+[2026-10-05 22:16:49] COMMAND received: client=127.0.0.1:38640 command=QUIT
+[2026-10-05 22:16:49] QUIT completed: client=127.0.0.1:38640 SID:3280
+[2026-10-05 22:16:49] CONNECTION closed: client=127.0.0.1:38640 thread=139811671299776
+[2026-10-05 22:17:04] CONNECTION opened: client=127.0.0.1:41866 thread=139811671299776
+[2026-10-05 22:17:04] COMMAND received: client=127.0.0.1:41866 command=AUTH [REDACTED]
+[2026-10-05 22:17:04] AUTH success: client=127.0.0.1:41866 SID:3280
+[2026-10-05 22:17:04] COMMAND received: client=127.0.0.1:41866 command=GET file_that_does_not_exist.txt
+[2026-10-05 22:17:04] GET rejected: file=file_that_does_not_exist.txt reason=FILE_NOT_FOUND
+[2026-10-05 22:17:04] COMMAND received: client=127.0.0.1:41866 command=QUIT
+[2026-10-05 22:17:04] QUIT completed: client=127.0.0.1:41866 SID:3280
+[2026-10-05 22:17:04] CONNECTION closed: client=127.0.0.1:41866 thread=139811671299776
+[2026-10-05 22:17:20] CONNECTION opened: client=127.0.0.1:51514 thread=139811671299776
+[2026-10-05 22:17:20] COMMAND received: client=127.0.0.1:51514 command=AUTH [REDACTED]
+[2026-10-05 22:17:20] AUTH success: client=127.0.0.1:51514 SID:3280
+[2026-10-05 22:17:20] COMMAND received: client=127.0.0.1:51514 command=PUT huge_test.bin 10485761
+[2026-10-05 22:17:20] PUT rejected: file=huge_test.bin size=10485761 reason=FILE_TOO_LARGE
+[2026-10-05 22:17:20] DISCONNECTION unexpected/client_closed: client=127.0.0.1:51514
+[2026-10-05 22:17:20] CONNECTION closed: client=127.0.0.1:51514 thread=139811671299776
+[2026-10-05 22:17:44] CONNECTION opened: client=127.0.0.1:41162 thread=139811671299776
+[2026-10-05 22:17:44] COMMAND received: client=127.0.0.1:41162 command=AUTH [REDACTED]
+[2026-10-05 22:17:44] AUTH success: client=127.0.0.1:41162 SID:3280
+[2026-10-05 22:17:44] COMMAND received: client=127.0.0.1:41162 command=MONITOR START 70000
+[2026-10-05 22:17:44] MONITOR rejected: client=127.0.0.1:41162 reason=INVALID_UDP_PORT
+[2026-10-05 22:17:44] COMMAND received: client=127.0.0.1:41162 command=QUIT
+[2026-10-05 22:17:44] QUIT completed: client=127.0.0.1:41162 SID:3280
+[2026-10-05 22:17:44] CONNECTION closed: client=127.0.0.1:41162 thread=139811671299776
+[2026-10-05 22:17:53] CONNECTION opened: client=127.0.0.1:49694 thread=139811671299776
+[2026-10-05 22:17:53] COMMAND received: client=127.0.0.1:49694 command=AUTH [REDACTED]
+[2026-10-05 22:17:53] AUTH success: client=127.0.0.1:49694 SID:3280
+[2026-10-05 22:17:53] COMMAND received: client=127.0.0.1:49694 command=MONITOR START 0
+[2026-10-05 22:17:53] MONITOR rejected: client=127.0.0.1:49694 reason=INVALID_UDP_PORT
+[2026-10-05 22:17:53] COMMAND received: client=127.0.0.1:49694 command=QUIT
+[2026-10-05 22:17:53] QUIT completed: client=127.0.0.1:49694 SID:3280
+[2026-10-05 22:17:53] CONNECTION closed: client=127.0.0.1:49694 thread=139811671299776
+[2026-10-05 22:18:12] CONNECTION opened: client=127.0.0.1:38846 thread=139811671299776
+[2026-10-05 22:18:12] COMMAND received: client=127.0.0.1:38846 command=AUTH [REDACTED]
+[2026-10-05 22:18:12] AUTH success: client=127.0.0.1:38846 SID:3280
+[2026-10-05 22:18:12] COMMAND rejected: client=127.0.0.1:38846 reason=LINE_TOO_LONG
+[2026-10-05 22:18:12] COMMAND received: client=127.0.0.1:38846 command=SYSINFO
+[2026-10-05 22:18:12] COMMAND received: client=127.0.0.1:38846 command=QUIT
+[2026-10-05 22:18:12] QUIT completed: client=127.0.0.1:38846 SID:3280
+[2026-10-05 22:18:12] CONNECTION closed: client=127.0.0.1:38846 thread=139811671299776
+[2026-10-05 22:48:59] AGENT started: port=9461 SID:3280 storage=./agentfiles/IT24610823
+[2026-10-05 22:49:36] CONNECTION opened: client=127.0.0.1:45482 thread=140610068416192
+[2026-10-05 22:49:36] COMMAND received: client=127.0.0.1:45482 command=AUTH [REDACTED]
+[2026-10-05 22:49:36] AUTH success: client=127.0.0.1:45482 SID:3280
+[2026-10-05 22:49:42] COMMAND received: client=127.0.0.1:45482 command=SYSINFO
+[2026-10-05 22:49:47] COMMAND received: client=127.0.0.1:45482 command=LISTPROC
+[2026-10-05 22:49:53] COMMAND received: client=127.0.0.1:45482 command=EXEC DATE
+[2026-10-05 22:50:01] COMMAND received: client=127.0.0.1:45482 command=EXEC UPTIME
+[2026-10-05 22:50:13] COMMAND received: client=127.0.0.1:45482 command=EXEC DISKFREE
+[2026-10-05 22:50:20] COMMAND received: client=127.0.0.1:45482 command=EXEC HOSTNAME
+[2026-10-05 22:50:29] COMMAND received: client=127.0.0.1:45482 command=EXEC WHOAMI
+[2026-10-05 22:50:33] COMMAND received: client=127.0.0.1:45482 command=QUIT
+[2026-10-05 22:50:33] QUIT completed: client=127.0.0.1:45482 SID:3280
+[2026-10-05 22:50:33] CONNECTION closed: client=127.0.0.1:45482 thread=140610068416192
+[2026-10-05 22:51:18] CONNECTION opened: client=127.0.0.1:33058 thread=140610068416192
+[2026-10-05 22:51:18] COMMAND received: client=127.0.0.1:33058 command=AUTH [REDACTED]
+[2026-10-05 22:51:18] AUTH success: client=127.0.0.1:33058 SID:3280
+[2026-10-05 22:51:34] COMMAND received: client=127.0.0.1:33058 command=PUT final_test.txt 46
+[2026-10-05 22:51:34] FILE_UPLOAD completed: file=final_test.txt size=46 path=./agentfiles/IT24610823/final_test.txt
+[2026-10-05 22:51:49] COMMAND received: client=127.0.0.1:33058 command=GET final_test.txt
+[2026-10-05 22:51:49] FILE_DOWNLOAD completed: file=final_test.txt size=46 path=./agentfiles/IT24610823/final_test.txt
+[2026-10-05 22:52:04] COMMAND received: client=127.0.0.1:33058 command=QUIT
+[2026-10-05 22:52:04] QUIT completed: client=127.0.0.1:33058 SID:3280
+[2026-10-05 22:52:04] CONNECTION closed: client=127.0.0.1:33058 thread=140610068416192
+[2026-10-05 22:56:04] CONNECTION opened: client=127.0.0.1:41980 thread=140610068416192
+[2026-10-05 22:56:04] COMMAND received: client=127.0.0.1:41980 command=AUTH [REDACTED]
+[2026-10-05 22:56:04] AUTH success: client=127.0.0.1:41980 SID:3280
+[2026-10-05 22:56:26] COMMAND received: client=127.0.0.1:41980 command=MONITOR START 12000
+[2026-10-05 22:56:26] MONITOR started: client=127.0.0.1:41980 udp_port=12000 interval=5_seconds
+[2026-10-05 22:56:50] COMMAND received: client=127.0.0.1:41980 command=MONITOR STOP
+[2026-10-05 22:56:50] MONITOR stopped: client=127.0.0.1:41980
+[2026-10-05 22:56:57] COMMAND received: client=127.0.0.1:41980 command=QUIT
+[2026-10-05 22:56:57] QUIT completed: client=127.0.0.1:41980 SID:3280
+[2026-10-05 22:56:57] CONNECTION closed: client=127.0.0.1:41980 thread=140610068416192
+[2026-10-05 22:57:26] CONNECTION opened: client=127.0.0.1:51106 thread=140610068416192
+[2026-10-05 22:57:26] COMMAND received: client=127.0.0.1:51106 command=AUTH [REDACTED]
+[2026-10-05 22:57:26] AUTH success: client=127.0.0.1:51106 SID:3280
+[2026-10-05 22:57:32] CONNECTION opened: client=127.0.0.1:56872 thread=140610060023488
+[2026-10-05 22:57:32] COMMAND received: client=127.0.0.1:56872 command=AUTH [REDACTED]
+[2026-10-05 22:57:32] AUTH success: client=127.0.0.1:56872 SID:3280
+[2026-10-05 22:58:06] CONNECTION opened: client=127.0.0.1:52244 thread=140609981511360
+[2026-10-05 22:58:06] COMMAND received: client=127.0.0.1:52244 command=AUTH [REDACTED]
+[2026-10-05 22:58:06] AUTH success: client=127.0.0.1:52244 SID:3280
+[2026-10-05 22:58:32] COMMAND received: client=127.0.0.1:51106 command=SYSINFO
+[2026-10-05 22:58:41] COMMAND received: client=127.0.0.1:56872 command=LISTPROC
+[2026-10-05 22:58:52] COMMAND received: client=127.0.0.1:52244 command=EXEC HOSTNAME
+[2026-10-05 23:02:43] COMMAND received: client=127.0.0.1:51106 command=QUIT
+[2026-10-05 23:02:43] QUIT completed: client=127.0.0.1:51106 SID:3280
+[2026-10-05 23:02:43] CONNECTION closed: client=127.0.0.1:51106 thread=140610068416192
+[2026-10-05 23:02:48] COMMAND received: client=127.0.0.1:56872 command=QUIT
+[2026-10-05 23:02:48] QUIT completed: client=127.0.0.1:56872 SID:3280
+[2026-10-05 23:02:48] CONNECTION closed: client=127.0.0.1:56872 thread=140610060023488
+[2026-10-05 23:02:51] COMMAND received: client=127.0.0.1:52244 command=QUIT
+[2026-10-05 23:02:51] QUIT completed: client=127.0.0.1:52244 SID:3280
+[2026-10-05 23:02:51] CONNECTION closed: client=127.0.0.1:52244 thread=140609981511360
+[2026-10-05 23:03:35] CONNECTION opened: client=127.0.0.1:51696 thread=140609981511360
+[2026-10-05 23:03:35] COMMAND received: client=127.0.0.1:51696 command=AUTH [REDACTED]
+[2026-10-05 23:03:35] AUTH success: client=127.0.0.1:51696 SID:3280
+[2026-10-05 23:03:41] COMMAND received: client=127.0.0.1:51696 command=SYSINFO
+[2026-10-05 23:03:44] DISCONNECTION unexpected/client_closed: client=127.0.0.1:51696
+[2026-10-05 23:03:44] CONNECTION closed: client=127.0.0.1:51696 thread=140609981511360
+[2026-10-05 23:03:52] CONNECTION opened: client=127.0.0.1:54506 thread=140609981511360
+[2026-10-05 23:03:52] COMMAND received: client=127.0.0.1:54506 command=AUTH [REDACTED]
+[2026-10-05 23:03:52] AUTH success: client=127.0.0.1:54506 SID:3280
+[2026-10-05 23:04:01] COMMAND received: client=127.0.0.1:54506 command=EXEC DATE
+[2026-10-05 23:04:08] COMMAND received: client=127.0.0.1:54506 command=QUIT
+[2026-10-05 23:04:08] QUIT completed: client=127.0.0.1:54506 SID:3280
+[2026-10-05 23:04:08] CONNECTION closed: client=127.0.0.1:54506 thread=140609981511360
+[2026-10-05 23:04:19] CONNECTION opened: client=127.0.0.1:48784 thread=140609981511360
+[2026-10-05 23:04:19] COMMAND received: client=127.0.0.1:48784 command=AUTH [REDACTED]
+[2026-10-05 23:04:19] AUTH success: client=127.0.0.1:48784 SID:3280
+[2026-10-05 23:04:19] COMMAND received: client=127.0.0.1:48784 command=EXEC LS
+[2026-10-05 23:04:19] COMMAND received: client=127.0.0.1:48784 command=GET definitely_missing.txt
+[2026-10-05 23:04:19] GET rejected: file=definitely_missing.txt reason=FILE_NOT_FOUND
+[2026-10-05 23:04:19] COMMAND received: client=127.0.0.1:48784 command=HELLO
+[2026-10-05 23:04:19] COMMAND rejected: client=127.0.0.1:48784 command=HELLO reason=UNKNOWN_COMMAND
+[2026-10-05 23:04:19] COMMAND received: client=127.0.0.1:48784 command=QUIT
+[2026-10-05 23:04:19] QUIT completed: client=127.0.0.1:48784 SID:3280
+[2026-10-05 23:04:19] CONNECTION closed: client=127.0.0.1:48784 thread=140609981511360
+[2026-10-05 23:25:38] AGENT started: port=9461 SID:3280 storage=./agentfiles/IT24610823
+[2026-10-05 23:25:55] CONNECTION opened: client=127.0.0.1:38480 thread=140577187374784
+[2026-10-05 23:25:55] COMMAND received: client=127.0.0.1:38480 command=AUTH [REDACTED]
+[2026-10-05 23:25:55] AUTH success: client=127.0.0.1:38480 SID:3280
+[2026-10-05 23:26:46] COMMAND received: client=127.0.0.1:38480 command=QUIT
+[2026-10-05 23:26:46] QUIT completed: client=127.0.0.1:38480 SID:3280
+[2026-10-05 23:26:46] CONNECTION closed: client=127.0.0.1:38480 thread=140577187374784
+[2026-10-17 07:16:46] AGENT started: port=9461 SID:3280 storage=./agentfiles/IT24610823
+[2026-10-17 07:16:50] CONNECTION opened: client=127.0.0.1:45178 thread=140179795859136
+[2026-10-17 07:16:50] COMMAND received: client=127.0.0.1:45178 command=AUTH [REDACTED]
+[2026-10-17 07:16:50] AUTH success: client=127.0.0.1:45178 SID:3280
+[2026-10-17 07:17:14] COMMAND received: client=127.0.0.1:45178 command=GET missingfile.txt
+[2026-10-17 07:17:14] GET rejected: file=missingfile.txt reason=FILE_NOT_FOUND
+[2026-10-17 07:21:21] COMMAND received: client=127.0.0.1:45178 command=QUIT
+[2026-10-17 07:21:21] QUIT completed: client=127.0.0.1:45178 SID:3280
+[2026-10-17 07:21:21] CONNECTION closed: client=127.0.0.1:45178 thread=140179795859136
+[2026-10-17 07:26:17] AGENT started: port=9461 SID:3280 storage=./agentfiles/IT24610823
+[2026-10-17 07:26:19] CONNECTION opened: client=127.0.0.1:36242 thread=139822667421376
+[2026-10-17 07:26:19] COMMAND received: client=127.0.0.1:36242 command=AUTH [REDACTED]
+[2026-10-17 07:26:19] AUTH success: client=127.0.0.1:36242 SID:3280
+[2026-10-17 07:26:33] COMMAND received: client=127.0.0.1:36242 command=GET missingfile.txt
+[2026-10-17 07:26:33] GET rejected: file=missingfile.txt reason=FILE_NOT_FOUND
+[2026-10-17 07:31:22] AGENT started: port=9461 SID:3280 storage=./agentfiles/IT24610823
+[2026-10-17 07:31:27] CONNECTION opened: client=127.0.0.1:36198 thread=139994943481536
+[2026-10-17 07:31:27] COMMAND received: client=127.0.0.1:36198 command=AUTH [REDACTED]
+[2026-10-17 07:31:27] AUTH success: client=127.0.0.1:36198 SID:3280
+[2026-10-17 07:31:40] COMMAND received: client=127.0.0.1:36198 command=GET missingfile.txt
+[2026-10-17 07:31:40] GET rejected: file=missingfile.txt reason=FILE_NOT_FOUND
+[2026-10-17 07:35:19] AGENT started: port=9461 SID:3280 storage=./agentfiles/IT24610823
+[2026-10-17 07:35:24] CONNECTION opened: client=127.0.0.1:44792 thread=140491487385280
+[2026-10-17 07:35:24] COMMAND received: client=127.0.0.1:44792 command=AUTH [REDACTED]
+[2026-10-17 07:35:24] AUTH success: client=127.0.0.1:44792 SID:3280
+[2026-10-17 07:35:33] COMMAND received: client=127.0.0.1:44792 command=GET missingfile.txt
+[2026-10-17 07:35:33] GET rejected: file=missingfile.txt reason=FILE_NOT_FOUND
+[2026-10-17 07:42:50] AGENT started: port=9461 SID:3280 storage=./agentfiles/IT24610823
+[2026-10-17 07:42:57] CONNECTION opened: client=127.0.0.1:59528 thread=139662895269568
+[2026-10-17 07:42:57] COMMAND received: client=127.0.0.1:59528 command=AUTH [REDACTED]
+[2026-10-17 07:42:57] AUTH success: client=127.0.0.1:59528 SID:3280
+[2026-10-17 07:43:04] COMMAND received: client=127.0.0.1:59528 command=GET missingfile.txt
+[2026-10-17 07:43:04] GET rejected: file=missingfile.txt reason=FILE_NOT_FOUND
+[2026-10-17 07:47:51] AGENT started: port=9461 SID:3280 storage=./agentfiles/IT24610823
+[2026-10-17 07:47:55] CONNECTION opened: client=127.0.0.1:47588 thread=139625632306880
+[2026-10-17 07:47:55] COMMAND received: client=127.0.0.1:47588 command=AUTH [REDACTED]
+[2026-10-17 07:47:55] AUTH success: client=127.0.0.1:47588 SID:3280
+[2026-10-17 07:48:05] COMMAND received: client=127.0.0.1:47588 command=GET missingfile.txt
+[2026-10-17 07:48:05] GET FILE_NOT_FOUND path=./agentfiles/IT24610823/missingfile.txt
+[2026-10-17 07:51:54] DISCONNECTION unexpected/client_closed: client=127.0.0.1:47588
+[2026-10-17 07:51:54] CONNECTION closed: client=127.0.0.1:47588 thread=139625632306880
+[2026-10-17 07:52:06] AGENT started: port=9461 SID:3280 storage=./agentfiles/IT24610823
+[2026-10-17 07:52:10] CONNECTION opened: client=127.0.0.1:37840 thread=140603158042304
+[2026-10-17 07:52:10] COMMAND received: client=127.0.0.1:37840 command=AUTH [REDACTED]
+[2026-10-17 07:52:10] AUTH success: client=127.0.0.1:37840 SID:3280
+[2026-10-17 07:52:27] COMMAND received: client=127.0.0.1:37840 command=SYSINFO
+[2026-10-17 07:52:41] COMMAND received: client=127.0.0.1:37840 command=EXEC HOSTNAME

@@ -1058,16 +1058,25 @@ int handle_get(int client_fd,
     FILE *file =
         fopen(file_path, "rb");
 
-    if (file == NULL)
-    {
-        write_log(
-            "GET rejected: file=%s reason=FILE_NOT_FOUND",
-            filename);
+	if (file == NULL)
+	{
+	    char response[BUFFER_SIZE];
 
-        return send_response(
-            client_fd,
-            "ERR 005 FILE_NOT_FOUND SID:3280\n");
-    }
+	    snprintf(
+	        response,
+	        sizeof(response),
+	        "ERR 005 FILE_NOT_FOUND %s SID:3280\n",
+	        file_path);
+
+	    write_log(
+        	"GET FILE_NOT_FOUND path=%s",
+        		file_path);
+
+    	return send_response(
+        	client_fd,
+        	response);
+	}
+
 
     if (fseek(file,
               0,
